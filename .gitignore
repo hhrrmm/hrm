@@ -1,0 +1,9 @@
+*.actionScriptProperties
+*.flexProperties
+*.project
+/.model
+/.settings
+/html-template
+/libs
+/services
+/src/services/base/_Super_Base.as
