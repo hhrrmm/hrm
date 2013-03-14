@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:inputControls="inputControls.*"
+			   xmlns:outputControls="outputControls.*"
+			   creationComplete="init()" xmlns:local="*"
+			   currentState="loginState" width.workingState="100%"
+			   height.workingState="800">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+
+	<fx:Style source="cmq.css"/>
+	
+<!-- METADATA SECTION =================================================================================== -->
+	<fx:Metadata>
+		[Event(name="dataRetrieved", type="flash.events.Event")]
+	</fx:Metadata>
+	
+<!-- DECLARATIONS SECTION =============================================================================== -->
+	<fx:Declarations>
+		<mx:HTTPService id="loginService" resultFormat="text"
+						fault="loginService_fault(event);"
+						result="loginService_result(event)"/>
+		<mx:HTTPService id="calcService" resultFormat="text"
+						fault="calcService_fault(event);"
+						result="calcService_result(event)"/>
+		<mx:HTTPService id="baselineService" resultFormat="e4x"
+						fault="baselineService_fault(event);"
+						result="baselineService_result(event)"/>
+		<mx:HTTPService id="newScenarioService" resultFormat="e4x"
+						fault="newScenarioService_fault(event);"
+						result="newScenarioService_result(event)"/>
+		<mx:HTTPService id="indicatorListService" resultFormat="e4x"
+						fault="indicatorListService_fault(event);"
+						result="indicatorListService_result(event)"/>
+		<mx:HTTPService id="lastHistPeriodService" resultFormat="e4x"
+						fault="lastHistPeriodService_fault(event);"
+						result="lastHistPeriodService_result(event)"/>
+		<mx:HTTPService id="resetHistoricService" resultFormat="e4x"
+						fault="resetHistoricService_fault(event);"
+						result="resetHistoricService_result(event)"/>
+		<mx:HTTPService id="refreshDBService" resultFormat="text"
+						fault="refreshDBService_fault(event);"
+						result="refreshDBService_result(event)"/>
+	</fx:Declarations>
+	
+<!-- SCRIPT SECTION ===================================================================================== -->
+	<fx:Script>
+		<![CDATA[
+			import flash.events.TimerEvent;
+			import flash.utils.Timer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.managers.CursorManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.rpc.xml.*;
+			
+			import utils.*;
+
+//GLOBAL VARS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//bindable public vars
+			[Bindable]
+			public var baselineData     :ArrayCollection;
+			[Bindable]
+			public var indicatorListData:ArrayCollection;
+			[Bindable]
+			public var newScenarioData  :ArrayCollection;
+			[Bindable]
+			public var lastHistPeriod   :ArrayCollection;;
+			
+			//bindable private vars
+			[Bindable]
+			private var timeFrom:uint = 61;
+			[Bindable]
+			private var timeTo  :uint = 432;
+			
+			//private vars
+			private var alert       :Alert;
+			private var haveBaseline:Boolean = false;
+			private var haveNewScn  :Boolean = false;
+			private var haveLastHist:Boolean = false;
+			
+			//private - a timer that firess every 5 mins to refresh DB connection and clean up the DB
+			private var timer:Timer = new Timer(30000); 
+			
+			//public vars
+			public var scenarioID:String;
+			public var sessionID :String;
+			//external
+			//public var address   :String  = "213.197.173.50";
+			//internal
+			public var address   :String  = "192.168.44.200"; 
+			
+
+//INITIALIZATION FUNCTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function init():void {
+				logoLogin.source = "logo.gif";	
+			}
+			
+			public function initWorkingState():void {
+				logo.source = "logo.gif";
+				
+				CursorManager.setBusyCursor();
+				
+				scenarioID = IDgenerator.generateID();
+				sessionID  = IDgenerator.generateID();
+				
+				this.addEventListener("dataRetrieved", dataRetrievalHandler);
+				timer.addEventListener( TimerEvent.TIMER, handleTimerEvent );
+				timer.start();
+				
+				getLastHistPeriod();
+				getBaselineData();
+				getNewScenarioData();
+				getIndicatorList();
+				
+				this.inputGroup1.ipAddr = this.address;
+				
+				this.inputGroup1.sessionID  = sessionID;
+				this.inputGroup1.scenarioID = scenarioID;
+				
+				this.inputGroup1.setTimeFrom = 61;
+				this.inputGroup1.setTimeTo = this.timeTo;
+				
+				CursorManager.removeBusyCursor();
+			}
+			
+//function to switch to the workingState ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function switchToWorkingState():void {
+				this.currentState = "workingState";
+			}
+
+//initialization function for the outputGroup ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function outputGroup_init():void {
+				this.outputGroup1.address      = this.address;
+				this.outputGroup1.sessionID    = sessionID;
+				this.outputGroup1.scenarioID   = scenarioID;
+				this.outputGroup1.setTimeFrom  = timeFrom;
+				this.outputGroup1.setTimeTo    = timeTo;
+				this.outputGroup1.lastHistoric = lastHistPeriod;
+				
+				this.outputGroup1.prepareChartData(baselineData, newScenarioData);	
+				this.outputGroup1.prepareIndicatorList(indicatorListData);
+				this.outputGroup1.updateOutputDatagrid();
+			}
+
+//function for retrieving data of the baseline scenario ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function getBaselineData() :void {
+				CursorManager.setBusyCursor();
+				baselineService.url = "http://" + address + "/Consulting/ConsultingMQ/HR/getBaselineData_test2.php?"
+					                + "&tmp=" 
+									+ String(Math.round(Math.random()*1000));
+				
+				baselineService.send();
+			}
+			
+//baselineService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function baselineService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(text, title);
+			}
+			
+			private function baselineService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				
+				baselineData = new ArrayCollection();
+				baselineData = XMLStrToArrCollConverter.convertXMLStrToArrayCollection(msg);
+				haveBaseline = true;
+				
+				CursorManager.removeBusyCursor();
+				this.dispatchEvent(new Event("dataRetrieved"));				
+			}
+			
+//function for retrieving data of the new scenario ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function getNewScenarioData() :void {
+				CursorManager.setBusyCursor();
+				newScenarioService.url =  "http://" 
+					+ address        + "/Consulting/ConsultingMQ/HR/getNewScenarioData_test2.php?"
+					+ "sessionID="   + sessionID 
+					+ "&scenarioID=" + scenarioID
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				newScenarioService.send();
+			}
+			
+//newScenarioService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function newScenarioService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(text, title);
+			}
+			
+			private function newScenarioService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				
+				newScenarioData = new ArrayCollection();
+				newScenarioData = XMLStrToArrCollConverter.convertXMLStrToArrayCollection(msg);
+				haveNewScn      = true;
+				
+				CursorManager.removeBusyCursor();
+				this.dispatchEvent(new Event("dataRetrieved"));
+			}
+			
+//function for retrieving the indicator list ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function getIndicatorList() :void {
+				CursorManager.setBusyCursor();
+				indicatorListService.url = "http://" + address 
+					+ "/Consulting/ConsultingMQ/HR/getIndicatorList_test2.php?"
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				indicatorListService.send();
+			}
+			
+//indicatorListService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function indicatorListService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(text, title);
+			}
+			
+			private function indicatorListService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				
+				indicatorListData = XMLStrToArrCollConverter.convertXMLStrToArrayCollection(msg);
+				
+				CursorManager.removeBusyCursor();
+				this.inputGroup1.prepareIndicatorList(indicatorListData);
+			}
+			
+//function that calls the output calculation script ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function calculateOutput():void {
+				scenarioID                  = IDgenerator.generateID();
+				this.inputGroup1.scenarioID = scenarioID;
+				if (Boolean(outputGroup1)) {
+					this.outputGroup1.scenarioID = scenarioID;
+				}
+				
+				CursorManager.setBusyCursor();
+				
+				calcService.url = "http://" 
+								+ address        + "/Consulting/ConsultingMQ/HR/calculateOutputData_test2.php?"
+					            + "sessionID="   + sessionID 
+								+ "&scenarioID=" + scenarioID
+								+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				calcService.send();
+			}
+
+//calcService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function calcService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(text, title);		
+			}
+			
+			private function calcService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				
+				//Alert.show(msg);
+				
+				if(msg.substr(0,8) == "DB_Error") {alert = Alert.show(msg, "Error");}
+				else {
+					newScenarioData = new ArrayCollection();
+					newScenarioData = XMLStrToArrCollConverter.convertXMLStrToArrayCollection(msg);
+					
+					this.inputGroup1.prepareData(baselineData, newScenarioData, lastHistPeriod);
+					
+					if (Boolean(outputGroup1)) {
+						this.outputGroup1.prepareChartData(baselineData, newScenarioData);
+						this.outputGroup1.updateOutputDatagrid();
+						this.outputGroup1.right_list_changeHandler();
+					}
+				}
+				CursorManager.removeBusyCursor();
+			}
+
+//function to get last historic period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function getLastHistPeriod() :void {
+				CursorManager.setBusyCursor();
+				
+				lastHistPeriodService.url = "http://" 
+					+ address        + "/Consulting/ConsultingMQ/HR/getLastHistoricPeriod_test2.php?"
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				lastHistPeriodService.send();
+			}
+			
+//lastHistPeriodService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function lastHistPeriodService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(text, title);
+			}
+			
+			private function lastHistPeriodService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				lastHistPeriod = new ArrayCollection();
+				lastHistPeriod = XMLStrToArrCollConverter.convertXMLStrToArrayCollection(msg);
+				haveLastHist   = true;
+				
+				if (Boolean(outputGroup1)) {
+					this.outputGroup1.lastHistoric = lastHistPeriod;
+				}
+				
+				this.dispatchEvent(new Event("dataRetrieved"));
+				CursorManager.removeBusyCursor();
+			}	
+
+// handler for the data retrieval function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function dataRetrievalHandler(evt:Event) :void {
+				if ((haveBaseline) && (haveNewScn) && (haveLastHist)) {
+					this.inputGroup1.prepareData(baselineData, newScenarioData, lastHistPeriod);
+					
+					if (Boolean(outputGroup1)) {
+						this.outputGroup1.lastHistoric = lastHistPeriod;
+						this.outputGroup1.prepareChartData(baselineData, newScenarioData);
+						this.outputGroup1.updateOutputDatagrid();
+						//right_list_changeHandler();
+						this.outputGroup1.right_list_changeHandler();
+					}
+				}
+			}
+
+//handler for the reset request ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function resetScenarioData() :void {
+				haveBaseline = true;
+				haveNewScn   = false;
+				haveLastHist = true;
+				
+				newScenarioService.url = "http://" + address 
+					+ "/Consulting/ConsultingMQ/HR/resetScenarioData_test2.php?"
+					+ "sessionID="   + sessionID 
+					+ "&scenarioID=" + scenarioID
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				newScenarioService.send();
+			}
+			
+//handler for historical data uploader ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function histDataUploadHandler() :void {
+				haveBaseline = false;
+				haveNewScn   = false;
+				haveLastHist = false;
+				
+				getLastHistPeriod();
+				getBaselineData();
+				//getNewScenarioData();
+				calculateOutput();
+			}
+			
+//handler for new scenario data uploader ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function newScnDataUploadHandler() :void {
+				haveBaseline = true;
+				haveNewScn   = false;
+				haveLastHist = true;
+				
+				//getNewScenarioData();
+				calculateOutput();
+			}
+			
+//open Euromonitor.com in new browser window/tab ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function openEMIurl() :void {
+				var request:URLRequest = new URLRequest();
+				request.url = "http://www.euromonitor.com";
+				navigateToURL(request, "_blank");
+			}
+			
+//resets historic data and updates all data objects ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function resetHistoricData() :void {
+				resetHistoricService.url = "http://" + address 
+					+ "/Consulting/ConsultingMQ/HR/resetHistoricData_test2.php?"
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				CursorManager.setBusyCursor();
+				resetHistoricService.send();
+			}
+			
+//resetHistoricService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function resetHistoricService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				CursorManager.removeBusyCursor();
+				
+				alert = Alert.show(text, title);
+			}
+
+			private function resetHistoricService_result(evt:ResultEvent):void {
+				var msg:String = String(evt.result);
+				
+				if(msg.substr(0, 7)=="Success") {
+					haveBaseline = false;
+					haveNewScn   = false;
+					haveLastHist = false;
+					
+					getLastHistPeriod();
+					getBaselineData();
+					resetScenarioData();
+				}
+				else{alert = Alert.show(msg, "Error");}
+				CursorManager.removeBusyCursor();
+			}
+			
+// timer event handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function handleTimerEvent(event:TimerEvent):void {
+				refreshDBService.url = "http://" + address 
+					+ "/Consulting/ConsultingMQ/HR/cleanUpDB_test2.php?"
+					+ "sessionID="   + sessionID 
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				
+				refreshDBService.send();
+			}
+			
+// refreshDBService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function refreshDBService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				alert = Alert.show(text, title);
+			}
+			
+			private function refreshDBService_result(evt:ResultEvent):void {
+				var s:String = String(evt.result);
+				//Alert.show(s);
+			}
+			
+// handles attempts to login ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function attemptLogin():void {
+				loginService.url = "http://" + address 
+								 + "/Consulting/ConsultingMQ/HR/login_test2.php?"
+								 //+ 'usr="Hill-Rom"'
+								 + 'usr="HR-test"'
+								 + "&pw="  + passwordPrompt.text
+								 + "&tmp=" + String(Math.round(Math.random()*1000));
+				loginService.send();
+			}
+			
+// loginService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function loginService_fault(evt:FaultEvent):void {
+				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
+				var text:String  = evt.fault.faultString;
+				
+				alert = Alert.show(text, title);
+			}
+			
+			private function loginService_result(evt:ResultEvent):void {
+				var s:String = String(evt.result);
+				
+				if (s.substr(0,7) == "Success") {
+					this.switchToWorkingState();
+				}
+			}
+		]]>
+	</fx:Script>
+	
+
+<!-- STATES SECTION ===================================================================================== -->
+	<s:states>
+		<s:State name="workingState"/>
+		<s:State name="loginState"/>
+	</s:states>
+	
+<!-- VISUAL LAYOUT ====================================================================================== -->
+	<!-- WORKING STATE CONTENT @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->	
+	<s:VGroup verticalCenter="0" horizontalCenter="0" 
+			  width="100%" height="100%"
+			  horizontalAlign="center" verticalAlign="bottom"
+			  includeIn="workingState" creationComplete="initWorkingState()">
+		<mx:Spacer width="95%" height="1%"/>
+		<!-- header group +++++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:HGroup width="95%" height="35" horizontalCenter="0"
+				  verticalAlign="bottom" horizontalAlign="center">
+			<s:Label text="HILL-ROM hospital bed sales forecasting - Beta " 
+					 fontSize="18" fontWeight="bold" fontStyle="normal"
+					 height="100%" width="70%" verticalAlign="middle" textAlign="left"/>	
+			<mx:Image buttonMode="true" click="openEMIurl();" id="logo" height="100%" width="30%"/>
+		</s:HGroup>
+		
+		
+		<!-- tab navigator ++++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<mx:TabNavigator width="95%" height="91%" borderVisible="true" 
+						 borderAlpha="0.5" dropShadowVisible="true"
+						 tabOffset="10" fontWeight="normal" 
+						 fontFamily="Georgia" fontSize="14">
+			<!-- model inputs tab -->
+			<s:NavigatorContent label="Model inputs" >
+				<s:Button id="calc_btn" click="calculateOutput();" 
+						  includeInLayout="false"/>
+				<s:VGroup horizontalAlign="center" width="100%" height="100%" 
+						  paddingBottom="8" paddingLeft="5">			
+					<inputControls:inputGroup_test2 id="inputGroup1" 
+											  width="98%" height="99%"
+											  reset_requested="resetScenarioData();"
+											  changes_made="calculateOutput();"
+											  newScnDataUploaded="newScnDataUploadHandler();"
+											  histDataUploaded="histDataUploadHandler();"
+											  reset_historic="resetHistoricData();"/>
+				</s:VGroup>
+			</s:NavigatorContent>
+			
+			<!-- model outputs tab -->
+			<s:NavigatorContent label="Model outputs" >
+				<s:VGroup horizontalAlign="center" width="100%" height="100%" 
+						  paddingBottom="8" paddingLeft="5">
+					<outputControls:outputGroup_test2 id="outputGroup1" 
+												width="98%" height="99%"
+												creationComplete="outputGroup_init();"/>
+				</s:VGroup>
+			</s:NavigatorContent>
+		</mx:TabNavigator>
+		<mx:Spacer width="95%" height="2%"/>
+		
+	</s:VGroup>
+	
+	<!-- LOGIN STATE CONTENT @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ -->
+	<s:VGroup includeIn="loginState" horizontalCenter="0" verticalCenter="0"
+			  height="100%" width="100%" horizontalAlign="center" verticalAlign="middle">
+		<mx:Image buttonMode="false" id="logoLogin"/>
+		<mx:HRule width="300" height="20"/>
+		<s:Label text="Please enter a password:"/>
+		<s:TextInput id="passwordPrompt" width="200" displayAsPassword="true"/>
+		<s:Button label="Log in" width="200" fontSize="14" fontFamily="Georgia" fontWeight="bold"
+				  click="attemptLogin();"/>
+	</s:VGroup>
+</s:Application>

@@ -1,0 +1,1272 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 width="100%" height="100%">
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+
+<!-- STYLE SECTION ====================================================================================== -->
+	<fx:Style>
+		.boldHeaderStyle {
+			fontWeight: bold;
+		}
+	</fx:Style>
+	
+<!-- DECLARATIONS SECTION =============================================================================== -->	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="radiogroup1"/>
+		
+		<!-- number formatters ++++++++++++++++++++++++++++++++++++++++++++ -->
+		<mx:NumberFormatter id="gridNumFormatter" decimalSeparatorTo="." 
+							thousandsSeparatorTo="," precision="2"/>
+		<mx:NumberFormatter id="gridNumFormatter2" decimalSeparatorTo="." 
+							thousandsSeparatorTo="," precision="-1"/> 
+		
+		<mx:NumberFormatter id="axisNumFormatter1" precision="1"
+							decimalSeparatorTo="."/>
+		<mx:NumberFormatter id="axisNumFormatter2" precision="-1"
+							decimalSeparatorTo="."/>
+		<mx:NumberFormatter id="axisNumFormatter3" precision="3"
+							decimalSeparatorTo="."/>
+		
+		<!-- strokes and fills for the charts +++++++++++++++++++++++++++++ -->
+		<!-- strokes -->
+		<mx:SolidColorStroke id = "hist_out" color="#760010" weight="1"/>
+		<mx:SolidColorStroke id = "hist_exo" color="#191970" weight="1"/>
+		<mx:SolidColorStroke id = "base_out" color="#c02525" weight="1" alpha="0.75"/>
+		<mx:SolidColorStroke id = "base_exo" color="#004ecd" weight="1" alpha="0.9"/>
+		<mx:SolidColorStroke id = "new_out" color="#ff7e00" weight="1" alpha="0.85"/>
+		<mx:SolidColorStroke id = "new_exo" color="#73b7da" weight="1" alpha="0.99"/>
+		<mx:SolidColorStroke id = "axis_stroke" color="#4F4F4F" 
+							 weight="2" alpha="0.85"/>
+		<mx:SolidColorStroke id = "tick_stroke" color="#4F4F4F" 
+							 weight="1" alpha="0.85"/>
+		
+		<!-- fills -->
+		<s:SolidColor id="hist_out_fill" color="#760010"/>
+		<s:SolidColor id="hist_exo_fill" color="#191970"/>
+		<s:SolidColor id="base_out_fill" color="#c02525" alpha="0.75"/>
+		<s:SolidColor id="base_exo_fill" color="#004ecd" alpha="0.9"/>
+		<s:SolidColor id="new_out_fill" color="#ff7e00" alpha="0.85"/>
+		<s:SolidColor id="new_exo_fill" color="#73b7da" alpha="0.99"/>
+		
+		<mx:CurrencyFormatter   id="PriceFMT1" precision="2"
+								rounding="none"
+								decimalSeparatorTo="."
+								thousandsSeparatorTo=","
+								useThousandsSeparator="true"
+								currencySymbol=""
+								useNegativeSign="true"                  
+								/>
+		
+		<mx:CurrencyFormatter   id="PriceFMT2" precision="4"
+								rounding="none"
+								decimalSeparatorTo="."
+								thousandsSeparatorTo=","
+								useThousandsSeparator="true"
+								currencySymbol=""
+								useNegativeSign="true"                  
+								/>     
+		
+		<mx:CurrencyFormatter   id="PriceFMT3" precision="0"
+								rounding="none"
+								decimalSeparatorTo="."
+								thousandsSeparatorTo=","
+								useThousandsSeparator="true"
+								currencySymbol=""
+								useNegativeSign="true"                  
+								/>		
+	</fx:Declarations>	
+	
+<!-- SCRIPT SECTION ===================================================================================== -->
+	<fx:Script>
+		<![CDATA[
+			import calcs.*;
+			
+			import mx.charts.AxisRenderer;
+			import mx.charts.LinearAxis;
+			import mx.charts.chartClasses.NumericAxis;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			import mx.events.SliderEvent;
+			import mx.graphics.SolidColor;
+			
+			import spark.events.IndexChangeEvent;
+			
+// variables global for the component ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		/* bindable public vars **********************************************/
+			[Bindable]
+			public var baselineScnData:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var newScnData     :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var lastHistoric   :ArrayCollection = new ArrayCollection();
+			
+		/* bindable private vars *********************************************/
+			//ArrayCollections (data providers)	
+			[Bindable]
+			private var salesValueChartData   :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var salesValueChartData2  :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var outputDatagridProvider:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var indListData            :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var indLeftListData        :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var indRightListData       :ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			public var timeUnitNames:Array = new Array();
+			//strings (for working with charts and their label)
+			[Bindable]
+			private var sel_indi_left  :String = "ind13";
+			[Bindable]
+			private var sel_indi_right :String = "ind1";
+			[Bindable]
+			private var sel_left_period  :String = "2011M5";
+			[Bindable]
+			private var sel_right_period :String = "2011M4";
+			[Bindable]
+			private var show_name_left :String;
+			[Bindable]
+			private var show_name_right:String;
+			
+			//booleans (for determining visibility of chart components)
+			[Bindable] 
+			private var show_baseline   :Boolean = true;
+			[Bindable] 
+			private var show_new        :Boolean = true;
+			[Bindable]
+			private var show_right_scale:Boolean = false;
+
+			//numeric
+			[Bindable]
+			private var gr_type :int  = 1; // 1 - for month on month, 2 - for q on q, 3 - yr on yr
+			[Bindable]
+			private var freq_type :int  = 1; // 1 - for monthly, 2 - for quarterly, 3 - annual
+
+			
+			[Bindable]		
+			private var timeFrom:uint = 61;
+			[Bindable]
+			private var timeTo  :uint = 432;
+			
+			/*
+			//Arrays of color values (???)
+			[Bindable]
+			private var warmColorsArray:Array = new Array(
+				new SolidColor(0xFF0033, .5), 
+				new SolidColor(0xFF0066, .5), 
+				new SolidColor(0xFF0099, .5)
+			);
+			[Bindable]
+			private var coolColorsArray:Array = new Array(
+				new SolidColor(0x3333CC, .5), 
+				new SolidColor(0x3366CC, .5), 
+				new SolidColor(0x3399CC, .5)
+			);*/
+
+		/* public non-bindable vars ******************************************/
+			public var address   :String;
+			public var sessionID :String;
+			public var scenarioID:String;
+			
+			//operations object (private)
+			private var op:calcs.operations = new operations();
+			
+// setters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			public function set setTimeFrom(timeID:int):void {
+				this.timeFrom = timeID;
+			};
+			
+			public function set setTimeTo(timeID:int):void {
+				this.timeTo = timeID;
+			};
+
+// sets the ArrayCollections and prepares data for charts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function prepareChartData (base:ArrayCollection, 
+											  newScn:ArrayCollection) :void {
+				baselineScnData = base;
+				newScnData      = newScn;
+				
+				var a:Array = new Array();
+				var HRunits:Array = new Array();
+				var gridAnnualData:Array = new Array();
+				if (right_list.selectedItem) {
+					ind_freq_type_right = Number(this.right_list.selectedItem['IndicatorType']);
+				};
+				//gridAnnualDataProvider
+			//if (ind_freq_type == 1) {
+				
+				var start1:String = sel_left_period;
+				var start2:String = sel_right_period;
+				for (var i:int = 0; i < baselineScnData.length; i++) {
+					var obj:Object;
+					var per:String = newScnData[i]['period'];
+										
+					if (ind_freq_type_right == 3) {
+						//start = start - 12;
+						start2 += "M12";
+					} else {
+						//start = start - 1;	
+					};
+					
+					if (getTimeID(baselineScnData[i]['period']) >= getTimeID(start1) 
+						&& getTimeID(baselineScnData[i]['period']) >= getTimeID(start2)) {
+						obj = {
+							period:baselineScnData[i]['period'],
+							base:(baselineScnData[i][sel_indi_left]),
+							base2:(baselineScnData[i][sel_indi_right]),
+							newScn:(newScnData[i][sel_indi_left]),
+							newScn2:(newScnData[i][sel_indi_right])
+						};
+						a.push(obj);
+						
+						obj = { 
+							period :baselineScnData[i]['period'],
+							base   :(baselineScnData[i]['ind8']),
+							newScn :(newScnData[i]['ind8'])							
+						};
+						HRunits.push(obj);		
+							
+						if ((per.substr(5, per.length-5) == "12") 
+							&&( Number(newScnData[i]['annualPeriod']) > 1981) )	{
+							gridAnnualData.push(obj);
+						};
+					}
+					//else if (getTimeID(baselineScnData[i]['period']) == lastHistoric[0]['timeID']) {
+					else if (getTimeID(baselineScnData[i]['period']) < getTimeID(start1) 
+						&& getTimeID(baselineScnData[i]['period']) >= getTimeID(start2)) {
+						obj = {
+							period:baselineScnData[i]['period'],
+							base:(baselineScnData[i][sel_indi_left]),
+							base2:(baselineScnData[i][sel_indi_right]),
+							newScn:null,
+							newScn2:(newScnData[i][sel_indi_right])
+						};
+						a.push(obj);
+						
+						obj = { 
+							period :baselineScnData[i]['period'],
+							base   :(baselineScnData[i]['ind8']),
+							newScn :null						
+						};
+						HRunits.push(obj);		
+							
+						if ((per.substr(5, per.length-5) == "12") 
+							&&( Number(newScnData[i]['annualPeriod']) > 1981) )	{
+							gridAnnualData.push(obj);
+						};
+					}
+					else if (getTimeID(baselineScnData[i]['period']) >= getTimeID(start1) 
+						&& getTimeID(baselineScnData[i]['period']) < getTimeID(start2)) {
+						obj = {
+							period:baselineScnData[i]['period'],
+							base:(baselineScnData[i][sel_indi_left]),
+							base2:(baselineScnData[i][sel_indi_right]),
+							newScn:(newScnData[i][sel_indi_left]),
+							newScn2:null
+						};
+						a.push(obj);
+						
+						obj = { 
+							period :baselineScnData[i]['period'],
+							base   :(baselineScnData[i]['ind8']),
+							newScn :(newScnData[i]['ind8'])							
+						};
+						HRunits.push(obj);		
+							
+						if ((per.substr(5, per.length-5) == "12") 
+							&&( Number(newScnData[i]['annualPeriod']) > 1981) )	{
+							gridAnnualData.push(obj);
+						};
+					}
+					else if (Number(String(baselineScnData[i]['period']).substr(0, 4)) >= 1985) {
+						obj = {
+							period:baselineScnData[i]['period'],
+							base:(baselineScnData[i][sel_indi_left]),
+							base2:(baselineScnData[i][sel_indi_right])
+						};
+						a.push(obj);
+						
+						obj = { 
+							period:baselineScnData[i]['period'],
+							base   :(baselineScnData[i]['ind8']),
+							newScn : null							
+						};
+						
+						HRunits.push(obj);
+					}
+				}
+				//we need to construct an array of annual data also
+				
+			/*} else if (ind_freq_type == 3) {			
+			};*/
+				var ind_type:Number = 0;
+				if (this.show_right_scale) {
+					ind_type = Number(this.right_list.selectedItem['IsRatio']);
+				}
+				
+				var agg_type:Number = 0;
+				var agg_type_right:Number = 0;
+				var ind_freq_type:Number = 0;
+				var ind_freq_type_right:Number = 0;
+				// type 1 - monthly, 3 - annual
+				if (left_list.selectedItem) {
+					ind_freq_type = Number(this.left_list.selectedItem['IndicatorType']);
+					agg_type = Number(this.left_list.selectedItem['AggType']);
+				} else {
+					ind_freq_type = 1;
+					agg_type = 1;
+				};
+				
+				if (right_list.selectedItem) {
+					ind_freq_type_right = Number(this.right_list.selectedItem['IndicatorType']);
+					agg_type_right = Number(this.right_list.selectedItem['AggType']);
+				} else {
+					ind_freq_type_right = 1;
+					agg_type_right = 1;
+				};
+				
+				if(ind_type == 0) {
+					this.chart2_sublabel.text = "Year-on-Year Growth Rates";
+				}
+				if (ind_type == 1) {
+					this.chart2_sublabel.text = "Year-on-Year Growth Rates / Difference";
+				}
+				
+				//----------
+				var periodType:String = "period";
+				if ((ind_freq_type == 1)&&(freq_type == 2)) {
+					//aggregate to max
+					//var agg_max:Number = ((agg_type > agg_type_right) ? agg_type : agg_type_right);
+					// aggregate to quarterly					
+					salesValueChartData =
+						new ArrayCollection(
+							op.change_freq_2(a, ind_freq_type, freq_type, agg_type, agg_type_right, HRunits)
+						);
+//					leftCol.dataField = sel_indi_left;					
+					gridQuatDataProvider = new ArrayCollection(
+						addDataQuat(gridDataProvider.source, salesValueChartData.source, sel_indi_left, 'newScn')
+					);
+					leftCol.dataField = 'quatI' + sel_indi_left.substr(1, sel_indi_left.length); 
+					//update dataGrid provider gridAnnualDataProvider with new sales data - annual
+					if ((sel_indi_freq == 1) && (freq_type == 2)) {						
+						gridQuatDataProvider = new ArrayCollection(
+							addDataQuat2(gridQuatDataProvider.source, salesValueChartData.source, sel_indi_right, 'newScn2')
+						);
+						//gridAnnualDataProvider = new ArrayCollection(updateBlock(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_right));
+						rightCol.dataField = 'quatI' + sel_indi_right.substr(1, sel_indi_right.length);
+						periodType = "quatPeriod";	
+						//periodCol.dataField = 'quatPeriod';
+						
+						outputDatagrid.dataProvider = this.gridQuatDataProvider;
+					} else {
+						rightCol.dataField = this.sel_indi_left;
+						periodCol.dataField = 'period';
+					};
+					
+				} else if ((ind_freq_type == 1)&&(freq_type == 3)) {
+					// aggregate to annual
+					salesValueChartData =
+						new ArrayCollection(
+							op.change_freq_2(a, ind_freq_type, freq_type, agg_type, agg_type_right, HRunits)
+						);
+					periodType = "annualPeriod";										
+					//update dataGrid provider gridAnnualDataProvider with new sales data - annual
+					gridAnnualDataProvider = new ArrayCollection(addData(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_left, 'newScn'));
+					
+					if ((sel_indi_freq == 1) && (freq_type == 3)) {
+						gridAnnualDataProvider = new ArrayCollection(
+							addData(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_right, 'newScn2')
+						);
+						//gridAnnualDataProvider = new ArrayCollection(updateBlock(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_right));
+						rightCol.dataField = 'annualI' + sel_indi_right.substr(1, sel_indi_right.length);	
+					} else {
+						rightCol.dataField = this.sel_indi_right;
+					};
+					//ind13, ind14,	ind15 - sel_indi_left
+					
+					leftCol.dataField = 'annualI' + sel_indi_left.substr(1, sel_indi_left.length);
+				} else {
+					// do nothing - no need to aggregate
+					periodType = "period";			
+					salesValueChartData   = new ArrayCollection(a);
+					leftCol.dataField = sel_indi_left;
+					//gridDataProvider = new ArrayCollection(addData(gridDataProvider.source, salesValueChartData.source, sel_indi_left));
+				};
+				
+				periodCol.dataField = periodType;
+				//----------
+				//salesValueChartData          = new ArrayCollection(a);
+				//salesValueChart.dataProvider = new ArrayCollection(addPoint(salesValueChartData.source));
+				salesValueChart.dataProvider = salesValueChartData;
+				
+				if (freq_type == 1) {				
+					outputDatagridProvider = gridDataProvider;
+					this.rightCol.dataField = this.sel_indi_right;
+				} else if (freq_type == 3) {
+					outputDatagridProvider = gridAnnualDataProvider;
+					//this.leftCol.dataField = this.sel_indi_left;
+				} else if (freq_type == 2){
+					outputDatagridProvider = this.gridQuatDataProvider;
+				};
+				
+				outputDatagrid.dataProvider = this.outputDatagridProvider;
+				
+				
+				//get growth
+				if (freq_type == 3) { //annual				
+					salesValueChartData2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates(salesValueChartData, 1, ind_type)
+					);
+				} else if (freq_type == 2) { //quarterly
+					salesValueChartData2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates(salesValueChartData, 2, ind_type)
+					);
+				} else if (freq_type == 1) { //motnhly
+					salesValueChartData2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates(salesValueChartData, 3, ind_type)
+					);					
+				};
+				/*salesValueChartData2 = new ArrayCollection(
+					op.calc_gr_rates(salesValueChartData, gr_type, ind_type)
+				);*/
+				salesValueChart0.dataProvider = salesValueChartData2;
+				
+				filterTimes();
+			}
+			
+			public function updateBlock(src:Array, newArr:Array, indi:String):Array {
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				for (var j:int = 0; j < src.length; j++) {
+					temp = src[j];
+					var newVal:Number = newVal[j]['newScn'];
+					var sn:String = 'annualI' + indi.substr(1, indi.length); 
+					temp[sn] = newVal;
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+				};  
+				return rez;
+			};
+
+//merges quarterlyGridDataProvider with new sales data
+			public function addDataQuat(annual:Array, sales:Array, sel_indi:String, field_name:String):Array {				
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				
+				//var init_year:String = annual[0]['quatPeriod'];
+				var curr:String = sales[0]['period'];
+				
+				var i:int = 0;
+				while ((!sales[i]['newScn'])&&(i < sales.length)) {
+					i++;					
+					curr = sales[i]['period'];
+				};				
+				curr = (String)(sales[i]['period']).substring(0, 4);
+				for (var j:int = i; ((j < sales.length)&&((Number)(curr) < 2016)); j++) {					
+					temp = new Object();
+					var newVal:Number = sales[j][field_name];
+					var sn:String = 'quatI' + sel_indi.substr(1, sel_indi.length); 
+					temp[sn] = newVal;
+					temp['quatPeriod'] = sales[j]['period'];
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+					curr = (String)(sales[j+1]['period']).substring(0, 4);
+				};  
+				
+				return rez;
+			}		
+			
+			public function addDataQuat2(annual:Array, sales:Array, sel_indi:String, field_name:String):Array {				
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				
+				var init_year:String = annual[0]['quatPeriod'];
+				var curr:String = sales[0]['period'];
+				
+				var i:int = 0;
+				while ((init_year != curr)&&(i < sales.length)) {
+					i++;					
+					curr = sales[i]['period'];
+				};		
+				
+				for (var j:int = 0; (j < annual.length); j++) {					
+					temp = annual[j];
+					var newVal:Number = sales[i+j][field_name];
+					var sn:String = 'quatI' + sel_indi.substr(1, sel_indi.length); 
+					temp[sn] = newVal;
+					//temp['quatPeriod'] = sales[j]['period'];
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+					//curr = (String)(sales[j+1]['period']).substring(0, 4);
+				};  
+				
+				return rez;
+			}		
+//merges annualGridDataProvider with new sales data
+			public function addData(annual:Array, sales:Array, sel_indi:String, field_name:String):Array {				
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				
+				var init_year:String = annual[0]['annualPeriod'];
+				var curr:String = sales[0]['period'];
+				
+				var i:int = 0;
+				while ((init_year != curr)&&(i < sales.length)) {
+					i++;					
+					curr = sales[i]['period'];
+				};
+				
+				for (var j:int = 0; j < annual.length; j++) {
+					temp = annual[j];
+					var newVal:Number = sales[i + j][field_name];
+					var sn:String = 'annualI' + sel_indi.substr(1, sel_indi.length); 
+					temp[sn] = newVal;
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+				};  
+				
+				return rez;
+			}
+			
+//function for setting outputDatagrid data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function updateOutputDatagrid() :void {
+				var gridData:Array = new Array();
+				var gridAnnualData:Array = new Array();
+				for (var j:int = 0; j < baselineScnData.length; j++) {
+					if (getTimeID(newScnData[j]['period']) > lastHistoric[0]['timeID'] &&
+						Number(String(newScnData[j]['period']).substr(0,4)) < 2016 ){
+						
+						var object:Object = newScnData[j];						
+						gridData.push(object);						
+						
+						var per:String = newScnData[j]['period'];					
+						
+						if ((per.substr(5, per.length-5) == "12") &&( Number(newScnData[j]['annualPeriod']) > 1981) )
+						{
+							//object['period'] = newScnData[j]['annualPeriod'];
+							gridAnnualData.push(object);
+						};
+					}
+				};
+				
+				gridDataProvider = new ArrayCollection(gridData);
+				gridAnnualDataProvider = new ArrayCollection(gridAnnualData);				
+				
+				if (freq_type == 1) {				
+					outputDatagridProvider = new ArrayCollection(gridData);
+				} else if (freq_type == 3) {
+					outputDatagridProvider = new ArrayCollection(gridAnnualData);
+				};
+					
+				//outputDatagrid.dataProvider = outputDatagridProvider;
+				//outputDatagrid
+			}
+
+			public function changeDatagridFreq(source:Array):void {				
+			}
+			
+//prepares indicator lists and sets datagrid column names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function prepareIndicatorList(ac:ArrayCollection) :void {
+				indListData = ac;
+				
+				indRightListData = new ArrayCollection();
+				indLeftListData  = new ArrayCollection();
+				
+				var temp:Object;
+				for (var i:uint = 0; i < indListData.length; i++) {
+					temp = indListData.getItemAt(i);
+					switch (temp['IndicatorID']) {
+						default:
+							indListData.source[i]['workName'] = 'ind'+i.toString();
+							break;
+					};
+					
+					if (temp['IOType'] == 0) {
+						indRightListData.addItem(temp);
+					}
+					else {
+						indLeftListData.addItem(temp);
+					}
+				};
+				
+				sel_left_period    = indListData[12]['histEnd'];
+				show_name_left     = indListData[12]['IndicatorName'];
+				leftCol.headerText = indListData[12]['IndicatorName'];
+				
+				if (indListData[12]['UnitName'] != null) {
+					show_name_left += ', ' + indListData[12]['UnitName'];
+				}
+				
+				this.left_list.dataProvider = indLeftListData;
+				this.left_list.selectedIndex  = 0;
+				
+				initSliders();
+				
+			}
+	
+			public function initSliders():void {
+				timeUnitNames = new Array();
+//				salesValueChartData
+				for (var i:uint = 0;  i < salesValueChartData.length; i++) {
+					if (( i % 48) == 0) {
+						var s:String = salesValueChartData[i]['period'];
+						timeUnitNames.push(s.substring(0, 4));
+					} else {
+						timeUnitNames.push("");
+					};
+				};		
+				/*s = salesValueChartData[salesValueChartData.length - 1]['period'];
+				timeUnitNames.push(s.substring(0, 4));*/
+			}
+			
+			private function dataTipFunc_slider(val:String):String {
+				return (this.baselineScnData[Number(val) - 1]['period']);
+			}
+			
+// Function to apply the filter function the ICollectionView. ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function filterTimes():void {
+				salesValueChartData.filterFunction = stateFilterFunc;
+				salesValueChartData2.filterFunction = stateFilterFunc;
+				/* Refresh the collection view to apply the filter. */
+				salesValueChartData.refresh();
+				salesValueChartData2.refresh();
+			}
+
+// forces the charts to redraw ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function updateSeries():void {
+				salesValueChartData.filterFunction = null;	
+				salesValueChartData.refresh();				
+				
+				salesValueChartData2.filterFunction = null;
+				salesValueChartData2.refresh();
+							
+				prepareChartData(this.baselineScnData, this.newScnData);	
+			}
+			
+//gets timeID of a period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function getTimeID(a:String):int {
+				var yr:int = (int)(a.substr(0, 4));
+				var m:int = 1;
+				if (a.length == 6) {
+					m = (int)(a.substr(5, 1));
+				}
+				else if (a.length == 7) {
+					m = (int)(a.substr(5, 2));
+				}
+				
+				var rez:int = (yr - 1980)*12 + m;
+				return rez;
+			}
+
+// checks if item.period is within allowed constraints ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function stateFilterFunc(item:Object):Boolean {
+				//idedam salyga del growth rate'u
+				var t:int = getTimeID(item.period);
+				return ((t >= timeFrom) && (t <= timeTo));
+			}
+			
+// checkbox click handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function checkbox1_clickHandler(event:MouseEvent):void
+			{
+				show_baseline = !show_baseline;
+			}
+			
+			protected function checkbox2_clickHandler(event:MouseEvent):void {
+				show_new = !show_new;
+			}
+			
+			protected function show_right_changeHandler(event:Event):void	{
+				show_right_scale = !show_right_scale;				
+				
+				if (!show_right_scale) {
+					this.right_series_nsc.visible = false;
+					this.right_series_nsc_1.visible = false;
+					
+					this.right_series_b.visible = false;
+					this.right_series_b_1.visible = false;
+					
+					this.top_label_middle.includeInLayout = false;
+					this.top_label_right.includeInLayout = false;
+					
+				} else {				
+					
+					this.right_series_nsc.visible = this.show_baseline;
+					this.right_series_nsc_1.visible = this.show_baseline;
+					this.right_series_b.visible = this.show_new;
+					this.right_series_b_1.visible = this.show_new;
+					
+					this.top_label_middle.includeInLayout = true;
+					this.top_label_right.includeInLayout = true;
+				};
+				
+				if (!this.right_list.selectedItem) {
+					this.right_list.selectedIndex = 0;					
+					right_list.dispatchEvent(new IndexChangeEvent("change"));					
+				} else {
+					right_list_changeHandler();
+				};
+				
+				
+				updateOutputDatagrid();
+				//added below update
+				
+				//updateSeries();
+			}
+			
+//click handlers for the radio buttons ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			protected function radiobutton1_clickHandler(event:MouseEvent):void			{
+				gr_type = 1;
+				updateSeries();
+			}
+			
+			protected function radiobutton2_clickHandler(event:MouseEvent):void			{
+				gr_type = 2;
+				updateSeries();
+			}
+			
+			protected function radiobutton3_clickHandler(event:MouseEvent):void			{
+				gr_type = 3;
+				updateSeries();
+			}
+			
+// slaideris change handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function hslider1_changeHandler(event:SliderEvent):void {
+				timeFrom = this.slaideris.values[0];
+				timeTo = this.slaideris.values[1];				
+				
+				if (timeFrom > (slaideris.maximum - 5*12)) {
+					timeFrom = slaideris.maximum - 5*12
+				};
+				
+				updateSeries();
+			}
+
+// slaideris initialization function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function slaideris_creationCompleteHandler(event:FlexEvent):void {
+				this.slaideris.values[0] = timeFrom;
+				this.slaideris.values[1] = timeTo;
+				this.slaideris.invalidateDisplayList();
+			}
+
+// list change handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			//output list change handler
+			protected function list1_changeHandler(event:IndexChangeEvent):void	
+			{
+				sel_indi_left = this.left_list.selectedItem['workName'];
+				
+				if(sel_indi_left.substr(0, 3) == "ind") {
+					sel_indi_left = 'ind'   
+						+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1);
+					leftCol.dataField = sel_indi_left;
+				}
+				
+				show_name_left     = this.left_list.selectedItem['IndicatorName'];
+				leftCol.headerText = this.left_list.selectedItem['IndicatorName'];
+				
+				if (this.left_list.selectedItem['UnitName'] != null) {
+					show_name_left += ', ' + this.left_list.selectedItem['UnitName'];
+				}
+				
+				if (this.right_list.selectedItem) {
+					show_name_right = this.right_list.selectedItem['IndicatorName'];
+					
+					if(this.right_list.selectedItem['UnitName'] != null) {
+						show_name_right += ', ' + this.right_list.selectedItem['UnitName'] ;
+					}
+				};	
+				
+				updateSeries();
+				//updateOutputDatagrid();
+				this.salesValueChart.invalidateDisplayList();
+			}
+			
+			[Bindable]
+			public var sel_indi_freq:Number = 1;
+			//input list change handler
+			public function right_list_changeHandler(event:IndexChangeEvent = null):void
+			{
+				this.sel_indi_right = this.right_list.selectedItem['workName'];
+				
+				sel_indi_right 	=  'ind'   
+					+ String((Number)(sel_indi_right.substr(3, sel_indi_right.length)) + 1);
+				
+				
+				rightCol.dataField = sel_indi_right;
+				
+				if (!left_list.selectedItem) {
+					left_list.selectedIndex = 0;
+				};
+				
+				show_name_left = this.left_list.selectedItem['IndicatorName'];
+				
+				if (this.left_list.selectedItem['UnitName'] != null) {
+					show_name_left += ', ' + this.left_list.selectedItem['UnitName'];
+				}
+				
+				if (this.right_list.selectedItem) {
+					show_name_right     = this.right_list.selectedItem['IndicatorName'];
+					rightCol.headerText = this.right_list.selectedItem['IndicatorName'];
+					
+					if(this.right_list.selectedItem['UnitName'] != null) {
+						show_name_right += ', ' + this.right_list.selectedItem['UnitName'] ;
+					}
+				};
+				
+				sel_indi_freq = this.right_list.selectedItem['IndicatorType'];
+				sel_right_period = this.right_list.selectedItem['histEnd'];
+				var periodType:String = "period";
+				
+				if (sel_indi_freq == 3) {
+					sel_indi_right = 'annualInd'   
+						+ (String)(Number(sel_indi_right.substr(3, sel_indi_right.length)));
+					periodType = "annualPeriod";
+					this.outputDatagrid.dataProvider = this.gridAnnualDataProvider;
+					this.freq3.selected = true;
+					radiobutton6_clickHandler();
+					
+				} else if (sel_indi_freq == 1) {
+					this.outputDatagrid.dataProvider = this.gridDataProvider;
+					updateSeries();
+				};
+				//var periodType:String = "period";
+				//periodCol.dataField = periodType;
+				
+				//updateOutputDatagrid();
+			}
+			
+			[Bindable]
+			private var gridDataProvider        :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var gridAnnualDataProvider  :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var gridQuatDataProvider  :ArrayCollection = new ArrayCollection();
+//calls php script that returns current scenario in an xls file ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function exportScenario() :void {
+				var request:URLRequest = new URLRequest();
+				request.url = "http://" 
+					+ address        + "/Consulting/ConsultingMQ/HR/exportDataToExcel_test.php?"
+					+ "sessionID="   + sessionID 
+					+ "&scenarioID=" + scenarioID
+					+ "&tmp="        + String(Math.round(Math.random()*1000));
+				navigateToURL(request, "_blank");
+			}
+			
+//formats value axis labels to take up less space ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			private function valueAxisLabelFunction(labelValue:Object, 
+													previousValue:Object, 
+													axis:LinearAxis):String {
+				var n:Number = Number(labelValue);
+				var s:String = "";
+				
+				if (n >= 1000000 || n <= -1000000 ) {
+					n = n/1000000;
+					s = axisNumFormatter2.format(String(n)) + " mil.";
+				}
+				else if (n >=1000 || n<= -1000) {
+					n = n/1000;
+					s = axisNumFormatter1.format(String(n)) + "K";
+				}
+				else if (n < 0.1 && n > -0.1 && n != 0) {
+					s = axisNumFormatter3.format(String(n));
+				}
+				else {
+					s = String(n);
+				}
+				
+				return s;
+			}
+			
+//formats grid columns (where aplicable) ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function gridOutput(item:Object, column:DataGridColumn):String {
+				var s  :String = String(column.dataField);
+				var n  :Number = Number(s);
+				var out:String = "";
+				
+				if (n < 0.005 && n > -0.005) {
+					out = this.gridNumFormatter2.format(n);
+				}
+				else {
+					out = this.gridNumFormatter.format(n);
+				}
+				
+				return out;
+			}
+			
+//formats growth axis labels ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			private function growthAxisLabelFunction(labelValue:Object, 
+													 previousValue:Object, 
+													 axis:LinearAxis):String {
+				var n:Number = Number(labelValue);
+				var s:String = "";
+				
+				if (n < 0.2 && n > -0.2 && n != 0) {
+					s = axisNumFormatter3.format(String(n));
+				}
+				else {
+					s = axisNumFormatter1.format(String(n));
+				}
+				return s;
+			}
+
+			protected function radiobutton4_clickHandler(event:MouseEvent):void
+			{	
+				freq_type = 1; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+
+			protected function radiobutton5_clickHandler(event:MouseEvent):void
+			{
+				freq_type = 2; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+
+			protected function radiobutton6_clickHandler(event:MouseEvent = null):void
+			{
+				freq_type = 3; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+			[Bindable] private var chartDGToolTip:String;		 
+			public function tooltips_formater(m:Object):String
+			{     
+				var ff:String = m.element.yField;
+				
+				if (m.element.yField == "base") {
+					chartDGToolTip = "<B>Baseline</B>" + "\n";
+				} else {
+					chartDGToolTip = "<B>New Scenario</B>" + "\n";
+				};				
+				
+				chartDGToolTip = chartDGToolTip +  m.item['period'] + "\n";
+				
+				if (Math.abs(m.item[ff]) < 0.5) {
+					chartDGToolTip = chartDGToolTip +
+						PriceFMT2.format(m.item[ff]);
+				} 
+				else if (Math.abs(m.item[ff]) > 100000) {
+					chartDGToolTip = chartDGToolTip +
+						PriceFMT3.format(m.item[ff]);
+				} else {
+					chartDGToolTip = chartDGToolTip + 
+						PriceFMT1.format(m.item[ff]);
+				};		
+				
+				return chartDGToolTip;            
+			}
+		]]>
+	</fx:Script>
+
+<!-- VISUAL LAYOUT ====================================================================================== -->
+	<s:HGroup horizontalCenter="0" verticalCenter="0" width="100%" height="100%" fontSize="14"
+			  horizontalAlign="center" gap="20">
+		
+		<!-- list/button group ++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup width="20%" height="100%" horizontalAlign="center">
+			<s:Button label="Export Scenario" width="98%" height="3%"
+					  click="exportScenario()" fontWeight="bold" enabled="true" fontSize="12"/>
+			<mx:HRule width="98%" height="7%"/>
+			<s:Label text="Model Output Indicators" width="98%" fontWeight="bold" fontSize="12" fontFamily="Georgia"/>
+			<s:Label text="(Left Scale)" width="100%"  fontSize="12"/>
+			<s:List width="95%" height="20%" dataProvider="{indLeftListData}"
+					labelField="IndicatorName" change="list1_changeHandler(event)" 
+					id="left_list" borderVisible="false" selectedIndex="0">
+				<s:layout>
+					<s:VerticalLayout horizontalAlign="justify" gap="1"/>
+				</s:layout>
+			</s:List>
+			<mx:HRule width="98%" height="8%"/>
+			<s:Label text="Model Input Indicators" width="98%" fontWeight="bold" fontSize="12" fontFamily="Georgia"/>
+			<s:HGroup width="98%" verticalAlign="middle">
+				<s:Label text="(Right Scale)" fontSize="12"/>
+				<s:CheckBox label="" id="show_right"
+							selected="{this.show_right_scale}" 
+							change="show_right_changeHandler(event)"/>
+			</s:HGroup>
+			<s:List width="95%" height="30%" dataProvider="{indRightListData}" 
+					labelField="IndicatorName" id="right_list" 
+					change="right_list_changeHandler(event)"
+					enabled="{this.show_right_scale}" borderVisible="false" selectedIndex="0">
+				<s:layout>
+					<s:VerticalLayout horizontalAlign="justify" gap="1"/>
+				</s:layout>
+			</s:List>
+		</s:VGroup>
+		<!-- end of list/button group +++++++++++++++++++++++++++++++++++++ -->
+		
+		<!-- chart group ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup width="50%" height="100%" horizontalAlign="center" verticalAlign="bottom" gap="3">
+			<!-- chart label subgroup -->
+			<s:HGroup height="9%" width="100%" gap="5" horizontalAlign="center">
+				<s:Label text="{show_name_left}" width="35%"
+						 height="100%" id="top_label_left" 
+						 fontWeight="bold" verticalAlign="middle" 
+						 textAlign="center" fontSize="14" fontFamily="Georgia"/>
+				<s:Label text="versus" height="100%" includeInLayout="false"
+						 id="top_label_middle" verticalAlign="middle" width="10%"
+						 textAlign="center" fontSize="12" 
+						 visible="{this.show_right_scale}"/>
+				<s:Label text="{show_name_right}" width="55%"
+						 height="100%" id="top_label_right" includeInLayout="false"
+						 fontWeight="bold" verticalAlign="middle" 
+						 textAlign="center" fontSize="14"
+						 visible="{this.show_right_scale}" fontFamily="Georgia"/>
+			</s:HGroup>
+			
+			<!-- baseline/new selector subgroup -->
+			<s:HGroup width="100%" height="4%">
+				
+			
+			<s:HGroup width="45%" height="100%" horizontalAlign="center">
+				<s:CheckBox label="Baseline" click="checkbox1_clickHandler(event)" 
+							selected="true" width="40%" height="100%" fontFamily="Georgia" fontSize="11"/>
+				<s:CheckBox label="New Scenario" click="checkbox2_clickHandler(event)" 
+							selected="true" height="100%" width="60%" fontFamily="Georgia" fontSize="11"/>
+			</s:HGroup>
+
+				<s:HGroup width="55%" height="100%" horizontalAlign="center">
+					<s:RadioButton label="Monthly" groupName="radiogroup3"
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+								   click="radiobutton4_clickHandler(event)" selected="true"
+								   enabled="{(show_right_scale ? ((3 - sel_indi_freq) > 0 ) : true) }"
+								   id="freq1"/>
+					
+					<s:RadioButton label="Quarterly" groupName="radiogroup3" 
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+					 			   click="radiobutton5_clickHandler(event)" 
+								   selected="false" id="fre2" 
+								   enabled="{(show_right_scale ? ((3 - sel_indi_freq) > 0 ) : true) }">						
+					</s:RadioButton>
+					
+					<s:RadioButton label="Annual" groupName="radiogroup3" 
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+						    	   click="radiobutton6_clickHandler(event)" 
+								   selected="false" id="freq3" enabled="true"/>
+				</s:HGroup>
+				
+			</s:HGroup>
+				
+			<s:Label text="Levels" textAlign="center" fontSize="12" 
+					 width="100%" height="4%" fontWeight="bold" verticalAlign="middle"/>
+			<!-- actual values chart -->
+			<mx:LineChart id="salesValueChart" width="95%" height="37%"
+						  showDataTips="true" seriesFilters="[]" fontFamily="Georgia"
+						  dataTipFunction="tooltips_formater">
+				
+				<mx:horizontalAxis>
+					<mx:CategoryAxis id="hAxis" categoryField="period" />
+				</mx:horizontalAxis>
+				<mx:horizontalAxisRenderers>
+					<mx:AxisRenderer axis="{hAxis}" canDropLabels="true"
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+				</mx:horizontalAxisRenderers>
+				
+				<mx:verticalAxisRenderers>
+					<mx:AxisRenderer placement="left" axis="{v1}"
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+					<mx:AxisRenderer placement="right" axis="{v2}" 
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"
+									 visible="{this.show_right_scale}"/>
+				</mx:verticalAxisRenderers>
+				
+				<mx:series>
+					<mx:LineSeries displayName="Baseline" yField="base" 
+								   visible="{show_baseline}"
+								   lineStroke="{base_out}" fill="{base_out_fill}" stroke="{base_out}"
+								   dataProvider="{salesValueChartData}">
+						<mx:verticalAxis >
+							<mx:LinearAxis baseAtZero="false" id="v1" labelFunction="valueAxisLabelFunction"/>
+						</mx:verticalAxis>
+					</mx:LineSeries>					
+					
+					<mx:LineSeries displayName="New scenario" yField="newScn" 
+								   visible="{this.show_new}"
+								   lineStroke="{new_out}" fill="{new_out_fill}" stroke="{new_out}"
+								   dataProvider="{salesValueChartData}"
+								   verticalAxis="{v1}">
+					</mx:LineSeries>						
+					
+					<mx:LineSeries id="right_series_b_1" displayName="Input Baseline" yField="base2" 
+								   visible="{this.show_right_scale?this.show_baseline:false}" 
+								   lineStroke="{base_exo}" fill="{base_exo_fill}" stroke="{base_exo}"
+								   dataProvider="{salesValueChartData}">
+						<mx:verticalAxis >
+							<mx:LinearAxis baseAtZero="false" id="v2" labelFunction="valueAxisLabelFunction"/>
+						</mx:verticalAxis>
+					</mx:LineSeries>
+					
+					<mx:LineSeries id="right_series_nsc_1" displayName="Input New scenario" yField="newScn2" 
+								   visible="{this.show_right_scale?this.show_new:false}"
+								   lineStroke="{new_exo}" fill="{new_exo_fill}" stroke="{new_exo}"
+								   dataProvider="{salesValueChartData}"
+								   verticalAxis="{v2}">
+					</mx:LineSeries>
+					
+				</mx:series>
+			</mx:LineChart>
+			
+			<s:HGroup width="100%" height="4%" horizontalAlign="center">
+				<mx:HSlider thumbCount="2" width="80%" 
+							change="hslider1_changeHandler(event)"
+							id="slaideris" minimum="61" maximum="432" 
+							snapInterval="1"
+							 tickInterval="24"
+							enabled="true"
+							creationComplete="slaideris_creationCompleteHandler(event)" 
+							height="100%"
+							labels="{timeUnitNames}"
+							dataTipFormatFunction="dataTipFunc_slider"
+							labelStyleName="sliderLabelStyleName" 
+							allowTrackClick="false"
+							 liveDragging="false">
+					
+				</mx:HSlider>
+				
+				<!--<s:RadioButton label="M-on-M" groupName="radiogroup1" selected="true"
+							   click="radiobutton1_clickHandler(event)" height="100%" textAlign="center"/>
+				<s:RadioButton label="Q-on-Q" groupName="radiogroup1" 
+							   click="radiobutton2_clickHandler(event)" height="100%"/>
+				<s:RadioButton label="Yr-on-Yr" groupName="radiogroup1" 
+							   click="radiobutton3_clickHandler(event)" height="100%"/>
+			!-->
+			</s:HGroup>
+			
+			<s:Label text="Year-on-Year Growth Rates" textAlign="center" fontSize="12" 
+					 width="100%" height="4%" fontWeight="bold" 
+					 id="chart2_sublabel" verticalAlign="bottom"/>
+			<!-- growth rate selector subgroup -->
+			<!-- growth rate chart -->
+			<mx:ColumnChart id="salesValueChart0" width="95%" height="37%" 
+							showDataTips="true" seriesFilters="[]" 
+							type="clustered" fontFamily="Georgia"
+							dataTipFunction="tooltips_formater">
+				
+				<mx:verticalAxisRenderers>
+					<mx:AxisRenderer placement="left" axis="{v01}"
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+					<mx:AxisRenderer placement="right" axis="{v02}"
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"
+									 visible="{this.show_right_scale}"/>
+				</mx:verticalAxisRenderers>
+				<mx:horizontalAxis>
+					<mx:CategoryAxis id="hAxis2" categoryField="period"/>
+				</mx:horizontalAxis>
+				<mx:horizontalAxisRenderers>
+					<mx:AxisRenderer axis="{hAxis2}" canDropLabels="true"
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+				</mx:horizontalAxisRenderers>
+				
+				<mx:series>
+					<mx:ColumnSeries displayName="Baseline" yField="base" visible="{this.show_baseline}"
+									 fill="{base_out_fill}"
+									 dataProvider="{salesValueChartData2}">
+						<mx:verticalAxis >
+							<mx:LinearAxis baseAtZero="false" id="v01" 
+										   labelFunction="growthAxisLabelFunction"/>
+						</mx:verticalAxis>
+					</mx:ColumnSeries>
+					
+					<mx:ColumnSeries displayName="New scenario" yField="newScn" visible="{this.show_new}"
+									 fill="{new_out_fill}" dataProvider="{salesValueChartData2}"
+									 verticalAxis="{v01}"/>
+					
+					<mx:LineSeries id="right_series_b" displayName="Input Baseline" yField="base2" 
+								   visible="{this.show_right_scale?this.show_baseline:false}" 
+								   lineStroke="{base_exo}" fill="{base_exo_fill}" stroke="{base_exo}"
+								   dataProvider="{salesValueChartData2}">
+						<mx:verticalAxis >
+							<mx:LinearAxis baseAtZero="false" id="v02" 
+										   labelFunction="growthAxisLabelFunction"/>
+						</mx:verticalAxis>
+					</mx:LineSeries>						
+					
+					<mx:LineSeries id="right_series_nsc" displayName="Input New scenario" yField="newScn2" 
+								   visible="{this.show_right_scale?this.show_new:false}" verticalAxis="{v02}" 
+								   lineStroke="{new_exo}" fill="{new_exo_fill}" stroke="{new_exo}"
+								   dataProvider="{salesValueChartData2}"/>
+				</mx:series>
+			</mx:ColumnChart>
+			
+			<!-- legend/slider subgroup -->
+			<s:HGroup width="100%" height="4%">
+				<!--mx:Legend dataProvider="{salesValueChart0}" width="50%" height="100%"/-->
+				<mx:Legend width="100%" height="100%" fontSize="12">
+					<mx:LegendItem label="Baseline" fill="{base_out_fill}"/>
+					<mx:LegendItem label="New scenario" fill="{new_out_fill}"/>
+					<mx:LegendItem label="Input Baseline" fill="{base_exo_fill}"
+								   visible="{this.show_right_scale}"/>
+					<mx:LegendItem label="Input New scenario" fill="{new_exo_fill}"
+								   visible="{this.show_right_scale}"/>
+				</mx:Legend>
+			</s:HGroup>
+		</s:VGroup>
+		<!-- end of chart group +++++++++++++++++++++++++++++++++++++++++++ -->
+		
+		<!-- datagrid group +++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup width="30%" height="100%">
+			<!-- datagrid -->
+			<mx:DataGrid id="outputDatagrid" width="95%" height="99%"
+						 draggableColumns="false" editable="false"
+						 rowCount="4" lockedColumnCount="1" 
+						 verticalAlign="middle" sortableColumns="false" 
+						 horizontalScrollPolicy="on" textAlign="center"
+						 alternatingItemColors="[white, #D3D3D3]" fontSize="12"
+						 dataProvider="{outputDatagridProvider}" >
+				<mx:columns>
+					<mx:DataGridColumn headerText="Period" dataField="period" id="periodCol" 
+									   headerWordWrap="true" headerStyleName="boldHeaderStyle"
+									   width="75"/>
+					<mx:DataGridColumn headerText="LeftIndicator" dataField="ind13" 
+									   headerStyleName="boldHeaderStyle" id="leftCol"
+									   editable="true" headerWordWrap="true" width="120"
+									   itemRenderer="inputControls.InputGridItemRenderer"/>
+					<mx:DataGridColumn headerText="RightIndicator" dataField="ind1" id="rightCol"
+									   headerWordWrap="true" visible="{this.show_right_scale}"
+									   itemRenderer="inputControls.InputGridItemRenderer"
+									   headerStyleName="boldHeaderStyle" width="120"/>
+				</mx:columns>
+			</mx:DataGrid>
+		</s:VGroup>
+		<!-- end of chart/grid group ++++++++++++++++++++++++++++++++++++++ -->
+		
+	</s:HGroup>
+</s:Group>

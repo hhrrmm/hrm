@@ -1,0 +1,1153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:srv="services.uplsrv.*" 
+		 width="100%" height="100%"
+		 creationComplete="init()">
+	
+<!-- STYLE SECTION ====================================================================================== -->
+	<fx:Style>
+		.boldHeaderStyle {
+			fontWeight: bold;
+			text-align: center;
+		}
+		
+		.sliderLabelStyleName {
+			font-family: Georgia;
+			font-size: 11;
+		}
+	</fx:Style>
+	
+<!-- METADATA SECTION =================================================================================== -->
+	<fx:Metadata>
+		[Event(name="baseDataUploaded",   type="flash.events.Event")]
+		[Event(name="histDataUploaded",   type="flash.events.Event")]
+		[Event(name="newScnDataUploaded", type="flash.events.Event")]
+		[Event(name="reset_requested",    type="flash.events.Event")]
+		[Event(name="changes_made",       type="flash.events.Event")]
+		[Event(name="reset_historic",     type="flash.events.Event")]
+	</fx:Metadata>
+
+<!-- DECLARATIONS SECTION =============================================================================== -->
+	<fx:Declarations>
+		<!-- service for uploading data from the datagrid +++++++++++++++++ -->
+		<srv:UplSrv id="upload_srv" 
+					fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)" 
+					showBusyCursor="true"/>
+		
+		<!-- call responder for the upload_srv ++++++++++++++++++++++++++++ -->
+		<s:CallResponder id="uplResult" result="uplResult_resultHandler(event)"/>
+		
+		<!-- number formatters ++++++++++++++++++++++++++++++++++++++++++++ -->
+		<mx:NumberFormatter id="axisNumFormatter1" precision="1" rounding="nearest"
+							decimalSeparatorTo="."/>
+		<mx:NumberFormatter id="axisNumFormatter2" precision="-1"
+							decimalSeparatorTo="."/>
+		<mx:NumberFormatter id="axisNumFormatter3" precision="3"
+							decimalSeparatorTo="."/>
+		
+		<!-- strokes and fills for the charts +++++++++++++++++++++++++++++ -->
+		<!-- strokes -->
+		<mx:SolidColorStroke id = "hist_out" color="#760010" weight="2"/>
+		<mx:SolidColorStroke id = "base_out" color="#c02525" 
+							 weight="2" alpha="0.75"/>
+		<mx:SolidColorStroke id = "new_out" color="#ff7e00" 
+							 weight="2" alpha="0.85"/>
+		<mx:SolidColorStroke id = "axis_stroke" color="#4F4F4F" 
+							 weight="2" alpha="0.85"/>
+		<mx:SolidColorStroke id = "tick_stroke" color="#4F4F4F" 
+							 weight="1" alpha="0.85"/>
+		
+		<!-- fills -->
+		<s:SolidColor id="hist_out_fill" color="#760010"/>
+		<s:SolidColor id="base_out_fill" color="#c02525" alpha="0.75"/>
+		<s:SolidColor id="new_out_fill"  color="#ff7e00" alpha="0.85"/>
+	</fx:Declarations>
+	
+<!-- SCRIPT SECTION ===================================================================================== -->	
+	<fx:Script>
+		<![CDATA[
+			import calcs.*;
+			
+			import mx.collections.ArrayCollection;
+			import mx.containers.Grid;
+			import mx.controls.Alert;
+			import mx.events.*;
+			import mx.managers.CursorManager;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.IndexChangeEvent;
+
+// variables global for the component ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		/* bindable public vars **********************************************/
+			[Bindable]
+			public var baselineScnData:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var indListData    :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var newScnData     :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var lastHistoric   :ArrayCollection = new ArrayCollection();
+			
+			[Bindable]
+			public var timeUnitNames:Array = new Array();
+			
+			
+		/* bindable private vars *********************************************/
+			//ArrayCollections (data providers)
+			[Bindable]
+			private var gridDataProvider        :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var gridAnnualDataProvider  :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var gridQuatDataProvider  :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var indListDataProvider     :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var indValChartDataProvider :ArrayCollection = new ArrayCollection();
+			[Bindable]
+			private var indValChartDataProvider2:ArrayCollection = new ArrayCollection();
+			
+			//strings (for working with charts and their labels)
+			[Bindable]
+			private var sel_indi_left   :String = "ind1";
+
+			[Bindable]
+			private var sel_indi_freq   :Number = 1;			
+			
+			//booleans (for determining visibility of chart components)
+			[Bindable] 
+			private var show_baseline   :Boolean = true;
+			[Bindable] 
+			private var show_new        :Boolean = true;
+			
+			//numeric
+			[Bindable]
+			private var gr_type :int  = 1; // 1 - for month on month, 2 - for q on q, 3 - yr on yr
+			[Bindable]
+			private var freq_type :int  = 1; // 1 - for monthly, 2 - for quarterly, 3 - annual
+			
+			[Bindable]			
+			private var timeFrom:uint = 61;
+			[Bindable]
+			private var timeTo  :uint = 432;
+			
+		/* private non-bindable vars *****************************************/
+			private var alert                 :Alert;
+			private var uploadStatus          :String;
+			private var address		          :String;
+			private var op                    :operations = new operations();
+			private var editedEntryCoordinates:Array      = new Array();
+			private var changedItems          :Array      = new Array();
+			private var showLine              :Boolean    = true;
+			
+		/* public non-bindable vars ******************************************/
+			public var baselineData :FileReference;
+			public var historicData :FileReference;
+			public var scenarioInput:FileReference;
+			public var sessionID    :String;
+			public var scenarioID   :String;
+			
+// initialization function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function init() :void {
+				editedEntryCoordinates = new Array();
+			}
+			
+// setters ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			public function set ipAddr(a:String):void {
+				this.address = a;
+			}
+			
+			public function set setTimeFrom(timeID:int):void {
+				this.timeFrom = timeID;
+			};
+			
+			public function set setTimeTo(timeID:int):void {
+				this.timeTo = timeID;
+			};
+			
+// sets the array collections and prepares data providers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function prepareData (base:ArrayCollection, 
+										 newScn: ArrayCollection, 
+										 lh:ArrayCollection) :void {
+				baselineScnData = base;
+				newScnData      = newScn;
+				lastHistoric    = lh;
+				
+				var gridData:Array = new Array();
+				var gridAnnualData:Array = new Array();
+				for (var j:int = 0; j < baselineScnData.length; j++) {
+					if (getTimeID(newScnData[j]['period']) > lastHistoric[0]['timeID'] && 
+						Number(String(newScnData[j]['period']).substr(0,4)) < 2016 ) {
+						
+						var object:Object = newScnData[j];			
+						gridData.push(object);
+						
+						var per:String = newScnData[j]['period'];						
+						
+						if ((per.substr(5, per.length-5) == "12") &&( Number(newScnData[j]['annualPeriod']) > 1981) )
+						{gridAnnualData.push(object);}
+					}
+				}
+				gridDataProvider = new ArrayCollection(gridData);
+				gridAnnualDataProvider = new ArrayCollection(gridAnnualData);
+				
+				prepareCharts(baselineScnData, newScnData);
+			}
+
+			public function initSliders():void {
+				timeUnitNames = new Array();
+				
+				for (var i:uint = 0;  i < baselineScnData.length; i = i + 48) {
+					var s:String = baselineScnData[i]['period'];
+					timeUnitNames.push(s.substring(0, 4));
+				};			
+			}
+			
+			private function dataTipFunc_slider(val:String):String {
+				return (this.baselineScnData[Number(val) - 1]['period']);
+			}
+			
+//prepares data for the charts ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function prepareCharts(base:ArrayCollection, newScn:ArrayCollection) :void {
+				var obj:Object;
+				
+				var a:Array = new Array();
+				var b:Array = new Array();
+				
+				var HRunits:Array = new Array();
+				
+				var ind_freq_type:Number = 0;
+				// type 1 - monthly, 3 - annual
+				ind_freq_type = Number(this.indicatorList.selectedItem['IndicatorType']);
+				
+				if (ind_freq_type == 1) {
+					for (var i:int = 0; i < baselineScnData.length; i++) {
+						
+						if (getTimeID(baselineScnData[i]['period']) > lastHistoric[0]['timeID'] /*+ 1*/) {
+							obj = { period:baselineScnData[i]['period'],
+								base   :(baselineScnData[i][sel_indi_left]),
+								newScn :(newScnData[i][sel_indi_left]),
+								history: null,
+								connect: null
+							};
+							a.push(obj);
+							
+							obj = { period:baselineScnData[i]['period'],
+								base   :(baselineScnData[i]['ind8']),
+								newScn :(newScnData[i]['ind8']),
+								history: null,
+								connect: null
+							};
+							HRunits.push(obj);
+						}
+						else {
+							obj = { period:baselineScnData[i]['period'],
+								base   :(baselineScnData[i][sel_indi_left]),
+								newScn : null,
+								history: null,
+								connect: null
+							};
+							a.push(obj);
+							
+							obj = { period:baselineScnData[i]['period'],
+								base   :(baselineScnData[i]['ind8']),
+								newScn : null,
+								history: null,
+								connect: null
+							};
+							
+							HRunits.push(obj);
+						}
+					};
+				}
+				else if (ind_freq_type == 3) {					
+					for (i = 0; i < baselineScnData.length; i++) {
+						var per:String = baselineScnData[i]['period']
+						
+						if ((per.substr(5, per.length-5) == "12") &&( Number(newScnData[i]['annualPeriod']) > 1981)) {
+							if (getTimeID(baselineScnData[i]['period']) > lastHistoric[0]['timeID']) {
+								obj = { period:baselineScnData[i]['annualPeriod'],
+									base   :(baselineScnData[i][sel_indi_left]),
+									newScn :(newScnData[i][sel_indi_left])
+								};
+								a.push(obj);
+								
+								obj = { period:baselineScnData[i]['annualPeriod'],
+									base   :(baselineScnData[i]['ind8']),
+									newScn :(newScnData[i]['ind8'])
+								};
+								HRunits.push(obj);
+							}
+							else {
+								obj = { period:baselineScnData[i]['annualPeriod'],
+									base   :(baselineScnData[i][sel_indi_left]),
+									newScn : null
+								};
+								a.push(obj);
+								
+								obj = { period:baselineScnData[i]['annualPeriod'],
+									base   :(baselineScnData[i]['ind8']),
+									newScn : null
+								};
+								
+								HRunits.push(obj);
+							}
+						}
+					};
+				}
+				
+				var ind_type:Number = 0;
+				ind_type = Number(this.indicatorList.selectedItem['IsRatio']);
+				
+				var agg_type:Number = 0;
+				agg_type = Number(this.indicatorList.selectedItem['AggType']);				
+				
+				if(ind_type == 0) {
+					this.chart2_sublabel.text = "Growth Rates";
+				}
+				if (ind_type == 1) {
+					this.chart2_sublabel.text = "Difference";
+				}
+				
+				//here we do the aggregation of indicator, if possible 
+				//get selected indicator's IndicatorType and AggType, 
+				//then check if we need and can aggregate it
+				//aggregation function return just an array of
+				/*  
+				'period'    :temp.period,
+				'base'      :diff_base,
+				'base2' 	:diff_base2,
+				'history'   :diff_hist,
+				'history2' 	:diff_hist2,
+				'newScn'    :diff_newScn,
+				'newScn2'	:diff_newScn2
+				*/
+				
+				//----------
+				if ((ind_freq_type == 1)&&(freq_type == 2)) {
+					// aggregate to quarterly					
+					indValChartDataProvider =
+						new ArrayCollection(
+							op.change_freq(a, ind_freq_type, freq_type, agg_type, HRunits)
+						);  
+					//update dataGrid provider gridAnnualDataProvider with new sales data - annual
+					if ((sel_indi_freq == 1) && (freq_type == 2)) {						
+						gridQuatDataProvider = new ArrayCollection(
+							addDataQuat(gridDataProvider.source, indValChartDataProvider.source, sel_indi_left, 'newScn')
+						);
+						//gridAnnualDataProvider = new ArrayCollection(updateBlock(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_right));
+						valueCol.dataField = 'quatI' + sel_indi_left.substr(1, sel_indi_left.length);
+						periodCol.dataField = 'quatPeriod';
+						
+						inputDataGrid.dataProvider = this.gridQuatDataProvider;
+					} else {
+						valueCol.dataField = this.sel_indi_left;
+						periodCol.dataField = 'period';
+					};
+				} else if ((ind_freq_type == 1)&&(freq_type == 3)) {
+					// aggregate to annual
+					indValChartDataProvider =
+						new ArrayCollection(
+							op.change_freq(a, ind_freq_type, freq_type, agg_type, HRunits)
+						);
+					//update dataGrid provider gridAnnualDataProvider with new sales data - annual
+					if ((sel_indi_freq == 1) && (freq_type == 3)) {						
+						gridAnnualDataProvider = new ArrayCollection(
+							addData(gridAnnualDataProvider.source, indValChartDataProvider.source, sel_indi_left, 'newScn')
+						);
+						//gridAnnualDataProvider = new ArrayCollection(updateBlock(gridAnnualDataProvider.source, salesValueChartData.source, sel_indi_right));
+						valueCol.dataField = 'annualI' + sel_indi_left.substr(1, sel_indi_left.length);
+						periodCol.dataField = 'annualPeriod';
+						
+						inputDataGrid.dataProvider = this.gridAnnualDataProvider;
+					} else {
+						valueCol.dataField = this.sel_indi_left;
+						periodCol.dataField = 'period';
+					};
+				} else if ((sel_indi_freq == 3)) {
+					
+					indValChartDataProvider   = new ArrayCollection(a);
+					inputDataGrid.dataProvider = this.gridAnnualDataProvider;
+					valueCol.dataField = this.sel_indi_left;
+					periodCol.dataField = 'annualPeriod';
+					freq_type = 3;
+					
+					
+				} else {
+					//sel_indi_left
+					// do nothing - no need to aggregate
+					indValChartDataProvider   = new ArrayCollection(a);
+					inputDataGrid.dataProvider = this.gridDataProvider;				
+					valueCol.dataField = this.sel_indi_left;
+					periodCol.dataField = 'period';
+				};
+				
+				
+				//----------
+				
+				//indValChartDataProvider          = new ArrayCollection(a);
+				//indicatorValueChart.dataProvider  = new ArrayCollection(addPoint(indValChartDataProvider.source));
+				indicatorValueChart.dataProvider  = indValChartDataProvider;
+				//get growth
+				if (freq_type == 3) { //annual				
+					indValChartDataProvider2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates_2(indValChartDataProvider, 1, ind_type)
+					);
+				} else if (freq_type == 2) { //quarterly
+					indValChartDataProvider2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates_2(indValChartDataProvider, 2, ind_type)
+					);
+				} else if (freq_type == 1) { //motnhly
+					indValChartDataProvider2 = new ArrayCollection(
+						//op.calc_gr_rates(new ArrayCollection(a), gr_type, ind_type)
+						op.calc_gr_rates_2(indValChartDataProvider, 3, ind_type)
+					);					
+				};				
+				
+				
+				indicatorValueChart2.dataProvider = indValChartDataProvider2;
+				
+				CursorManager.removeBusyCursor();
+				
+				filterTimes();
+			}
+
+			public function addPoint(src:Array):Array {
+				var rez:Array = new Array();
+				for (var j:uint = src.length - 1; ((j > 0)&&(src[j]['newScn'])); j--) {
+				};
+				src[j]['newScn'] = src[j]['base']; 
+				
+				return src;
+			}			
+			
+//merges annualGridDataProvider with new sales data
+			public function addData(annual:Array, sales:Array, sel_indi:String, field_name:String):Array {				
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				
+				var init_year:String = annual[0]['annualPeriod'];
+				var curr:String = sales[0]['period'];
+				
+				var i:int = 0;
+				while ((init_year != curr)&&(i < sales.length)) {
+					i++;					
+					curr = sales[i]['period'];
+				};
+				
+				for (var j:int = 0; j < annual.length; j++) {
+					temp = annual[j];
+					var newVal:Number = sales[i + j][field_name];
+					var sn:String = 'annualI' + sel_indi.substr(1, sel_indi.length); 
+					temp[sn] = newVal;
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+				};  
+				
+				return rez;
+			}
+
+//merges quarterlyGridDataProvider with new sales data
+			public function addDataQuat(annual:Array, sales:Array, sel_indi:String, field_name:String):Array {				
+				var rez:Array = new Array();
+				var temp:Object = new Object();
+				
+				//var init_year:String = annual[0]['quatPeriod'];
+				var curr:String = sales[0]['period'];
+				
+				var i:int = 0;
+				while ((!sales[i]['newScn'])&&(i < sales.length)) {
+					i++;					
+					curr = sales[i]['period'];
+				};
+				
+				curr = (String)(sales[i]['period']).substring(0, 4);
+				for (var j:int = i; ((j < sales.length)&&((Number)(curr) < 2016)); j++) {					
+					temp = new Object();
+					var newVal:Number = sales[j][field_name];
+					var sn:String = 'quatI' + sel_indi.substr(1, sel_indi.length); 
+					temp[sn] = newVal;
+					temp['quatPeriod'] = sales[j]['period'];
+					//annual[j][sel_indi] = sales[i + j]['newScn'];
+					rez.push(temp);
+					curr = (String)(sales[j+1]['period']).substring(0, 4);
+				};  
+				
+				return rez;
+			}			
+			
+// prepares the list of indicators and grid header text ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function prepareIndicatorList(ac:ArrayCollection) :void {
+				indListData = ac;
+				
+				//set initial chart labels
+				chart1_label.text = indListData[0]['IndicatorName'];
+				
+				if (indListData[0]['UnitName'] != null) {
+					chart1_label.text += ", " + indListData[0]['UnitName'];
+				}
+					
+				//prepare indicator list
+				indListDataProvider = new ArrayCollection();
+				var temp:Object;
+				for (var i:uint = 0; i < (indListData.length - 2); i++) {
+					temp = indListData.getItemAt(i);
+					indListData.source[i]['workName'] = 'ind'+i.toString();
+					
+					if (temp['IOType'] == 0) {
+						indListDataProvider.addItem(temp);
+					}
+				};
+				
+				indicatorList.selectedIndex = 0;
+				valueCol.headerText = indListDataProvider[0]['IndicatorName'];
+			}
+			
+//upload error handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function handleUploadError(evt:IOErrorEvent):void {
+				CursorManager.removeBusyCursor();
+				alert = Alert.show(evt.text, "Error");
+			}
+
+// baselineData upload function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function selectBaselineFile():void {
+				baselineData = new FileReference();
+				baselineData.addEventListener(Event.SELECT, baselineDataSelected);
+				baselineData.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, uploadBLDataComplete);
+				baselineData.addEventListener(IOErrorEvent.IO_ERROR, handleUploadError);
+				baselineData.browse();
+			}			
+			
+// baselineData upload event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//select handler: upload selected file
+			public function baselineDataSelected(evt:Event):void {
+				baselineData = FileReference(evt.target);
+				
+				var request:URLRequest = new URLRequest();
+				request.url = "http://" + address 
+					+ "/Consulting/ConsultingMQ/HR/baselineDataUploader.php?"
+					+ "tmp="+String(Math.round(Math.random()*1000));
+				CursorManager.setBusyCursor();
+				baselineData.upload(request);
+			}
+			
+			//upload complete handler
+			public function uploadBLDataComplete(evt:DataEvent):void {
+				uploadStatus=String(evt.data);
+				if(uploadStatus.substr(0, 7)=="Success") {
+					alert = Alert.show("Baseline data uploaded", "Complete");
+				}
+				else{alert = Alert.show(uploadStatus, "Error");}
+				CursorManager.removeBusyCursor();
+				
+				this.dispatchEvent(new Event("baseDataUploaded"));
+			}			
+			
+// historicData upload function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function selectHistoricFile():void {
+				historicData = new FileReference();
+				historicData.addEventListener(Event.SELECT, historicDataSelected);
+				historicData.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, uploadHistDataComplete);
+				historicData.addEventListener(IOErrorEvent.IO_ERROR, handleUploadError);
+				historicData.browse();
+			}			
+			
+// historicData upload event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//select handler: upload selected file
+			public function historicDataSelected(evt:Event):void {
+				historicData = FileReference(evt.target);
+				
+				var request:URLRequest = new URLRequest();
+				request.url = "http://" + address
+					+ "/Consulting/ConsultingMQ/HR/historicDataUploader.php?"
+					+ "tmp="+String(Math.round(Math.random()*1000));
+				CursorManager.setBusyCursor();
+				historicData.upload(request);
+			}
+			
+			//upload complete handler
+			public function uploadHistDataComplete(evt:DataEvent):void {
+				uploadStatus=String(evt.data);
+				if(uploadStatus.substr(0, 7)=="Success") {
+					alert = Alert.show("Historic data uploaded", "Complete");
+				}
+				else{alert = Alert.show(uploadStatus, "Error");}
+				CursorManager.removeBusyCursor();
+				
+				this.dispatchEvent(new Event("histDataUploaded"));
+			}
+			
+// scenarioInput upload function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function selectScenarioInputFile():void {
+				scenarioInput = new FileReference();
+				scenarioInput.addEventListener(Event.SELECT, scenarioInputSelected);
+				scenarioInput.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, uploadScnDataComplete);
+				scenarioInput.addEventListener(IOErrorEvent.IO_ERROR, handleUploadError);
+				scenarioInput.browse();		
+			}
+			
+// scenarioInput upload event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//select handler: upload selected file
+			public function scenarioInputSelected(evt:Event):void {
+				scenarioInput = FileReference(evt.target);
+				
+				var request:URLRequest = new URLRequest();
+				request.url = "http://" + address
+					+ "/Consulting/ConsultingMQ/HR/scenarioInputUploader_UN.php?"
+					+ "sessionID=" +sessionID 
+					+ "&tmp="+String(Math.round(Math.random()*1000));
+				CursorManager.setBusyCursor();
+				scenarioInput.upload(request);
+			}
+			
+			//upload complete handler
+			public function uploadScnDataComplete(evt:DataEvent):void {
+				uploadStatus=String(evt.data);
+				if(uploadStatus.substr(0, 7)=="Success") {
+					this.dispatchEvent(new Event("newScnDataUploaded"));
+				}
+				else{alert = Alert.show(uploadStatus, "Error");}
+				CursorManager.removeBusyCursor();
+			}
+
+//scenario reset function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function resetScnData() :void {
+				//save_btn.enabled = false;
+				this.dispatchEvent(new Event("reset_requested"));
+			}
+
+//slaider initialization function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function slaider_init(event:FlexEvent):void {
+				this.slaider_input.values[0] = timeFrom;
+				this.slaider_input.values[1] = timeTo;
+				this.slaider_input.invalidateDisplayList();
+			}
+
+//slaider change handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function slaider_input_changeHandler(event:SliderEvent):void {
+				timeFrom = this.slaider_input.values[0];
+				timeTo = this.slaider_input.values[1];
+				
+				if (timeFrom > (slaider_input.maximum - 5*12)) {
+					timeFrom = slaider_input.maximum - 5*12
+				};
+				
+				if (timeFrom >= lastHistoric[0]['timeID']+1 
+					|| timeTo <= lastHistoric[0]['timeID']+1) {
+					showLine = false;
+				}
+				else {
+					showLine = true;
+				}
+				
+				updateSeries();
+			}
+
+// forces the charts to redraw ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function updateSeries():void {
+				indValChartDataProvider.filterFunction = null;	
+				indValChartDataProvider.refresh();
+				
+				indValChartDataProvider2.filterFunction = null;
+				indValChartDataProvider2.refresh();
+				
+				prepareCharts(baselineScnData, newScnData);	
+			}
+			
+// Function to apply the filter function to the chart data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				public function filterTimes():void {
+					indValChartDataProvider.filterFunction = stateFilterFunc;
+					indValChartDataProvider2.filterFunction = stateFilterFunc;
+				/* Refresh the collection view to apply the filter. */
+					indValChartDataProvider.refresh();
+					indValChartDataProvider2.refresh();
+				}
+
+// checks if item.period is within allowed constraints ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function stateFilterFunc(item:Object):Boolean {
+				//idedam salyga del growth rate'u
+				var t:int = getTimeID(item.period);
+				
+				/*if (freq_type == 2) { // quarterly
+					return ((t >= (timeFrom/4)) && (t <= (timeTo/4)));
+				}
+				else if (freq_type == 3) { //annual
+					return ((t >= timeFrom) && (t <= timeTo));
+				}
+				else {*/				
+					return ((t >= timeFrom) && (t <= timeTo));
+				//};
+			}
+
+//gets timeID of a period ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			private function getTimeID(a:String):int {
+				var yr:int = (int)(a.substr(0, 4));
+				var m:int = 1;
+				if (a.length == 6) {
+					m = (int)(a.substr(5, 1));
+				}
+				else if (a.length == 7) {
+					m = (int)(a.substr(5, 2));
+				};
+				
+				var rez:int = (yr - 1980)*12 + m;
+				return rez;
+			}
+
+//click handlers for the radio buttons ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function radiobutton1_clickHandler(event:MouseEvent):void
+			{
+				gr_type = 1;
+				updateSeries();
+			}
+
+
+			protected function radiobutton2_clickHandler(event:MouseEvent):void
+			{
+				gr_type = 2;
+				updateSeries();
+			}
+			
+			protected function radiobutton3_clickHandler(event:MouseEvent):void
+			{
+				gr_type = 3;
+				updateSeries();
+			}
+
+// change handler for the indicatorList ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function indicatorList_changeHandler(event:IndexChangeEvent):void
+			{
+				cursorManager.setBusyCursor();
+				
+				sel_indi_left = this.indicatorList.selectedItem['workName'];
+				
+				sel_indi_left = 'ind'   
+					+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1);
+				
+				chart1_label.text = this.indicatorList.selectedItem['IndicatorName'];
+				
+				if (this.indicatorList.selectedItem['UnitName'] != null) {
+					chart1_label.text += ", " + this.indicatorList.selectedItem['UnitName'];
+				}
+				
+				sel_indi_freq = this.indicatorList.selectedItem['IndicatorType'];
+				
+				var periodType:String = "period";
+				if (sel_indi_freq == 3) {
+					sel_indi_left = 'annualInd'   
+						+ sel_indi_left.substr(3, sel_indi_left.length);
+					periodType = "annualPeriod";
+					this.inputDataGrid.dataProvider = this.gridAnnualDataProvider;
+				}
+				if (sel_indi_freq == 1) {
+					this.inputDataGrid.dataProvider = this.gridDataProvider;
+				}
+				
+				valueCol.headerText = this.indicatorList.selectedItem['IndicatorName'];
+				valueCol.dataField  = sel_indi_left;
+				periodCol.dataField = periodType;
+				
+				cursorManager.removeBusyCursor();
+				
+				updateSeries();
+			}
+
+//inputGrid edit handler ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function itemEditComplete(event:DataGridEvent) :void {
+				save_btn.enabled = true;
+				
+				var i:Number = Number(event.rowIndex) + lastHistoric[0]['timeID'];
+				var j:Number = this.indicatorList.selectedItem['IndicatorID'];
+				
+				var obj:Object = {periodIndex:i, indicatorIndex:j};
+				
+				editedEntryCoordinates.push(obj);
+				
+				updateSeries();
+			}
+			
+//save function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function saveChanges() :void {
+				changedItems = new Array();
+				
+				for (var j:int = 0; j < editedEntryCoordinates.length; j++) {
+					var period   :Number = editedEntryCoordinates[j]['periodIndex']
+					var indicator:String = 'ind' + String(editedEntryCoordinates[j]['indicatorIndex']);
+				
+					var obj:Object = { TimeID:      editedEntryCoordinates[j]['periodIndex']+1,
+									   IndicatorID: editedEntryCoordinates[j]['indicatorIndex'],
+									   DataValue:   Number(newScnData[period][indicator])
+									 };
+					
+					changedItems.push(obj);
+				}
+				
+				var dataArray: ArrayCollection = new ArrayCollection(changedItems)
+				uplResult.token = upload_srv.updateScenarioData(sessionID, dataArray);
+				
+				save_btn.enabled       = false;
+				editedEntryCoordinates = new Array();
+				
+			}
+
+//result handler for the uplResult ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			public function uplResult_resultHandler(event:ResultEvent) :void {
+				this.dispatchEvent(new Event("changes_made"));
+			}
+			
+			
+//formats value axis labels to take up less space ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			private function valueAxisLabelFunction(labelValue:Object, 
+													previousValue:Object, 
+													axis:LinearAxis):String {
+				var n:Number = Number(labelValue);
+				var s:String = "";
+				
+				if (n >= 1000000 || n <= -1000000 ) {
+					n = n/1000000;
+					s = axisNumFormatter2.format(String(n)) + " mil.";
+				}
+				else if (n >=1000 || n<= -1000) {
+					n = n/1000;
+					s = axisNumFormatter1.format(String(n)) + "K";
+				}
+				else if (n < 0.1 && n > -0.1 && n != 0) {
+					s = axisNumFormatter3.format(String(n));
+				}
+				else {
+					s = String(n);
+				}
+				
+				return s;
+			}
+			
+//formats growth axis labels ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
+			private function growthAxisLabelFunction(labelValue:Object, 
+													previousValue:Object, 
+													axis:LinearAxis):String {
+				var n:Number = Number(labelValue);
+				var s:String = "";
+				
+				if (n < 0.2 && n > -0.2 && n != 0) {
+					s = axisNumFormatter3.format(String(n));
+				}
+				else {
+					s = axisNumFormatter1.format(String(n));
+				}
+				return s;
+			}
+			
+// verifies if the user really wants to reset historic data, and dispatches necessary events ~~~~~~~~~~~
+			public function resetHistoricData(event:CloseEvent):void {
+				if(event.detail == Alert.YES) {
+					this.dispatchEvent(new Event("reset_historic"));
+				}
+				else if(event.detail==Alert.NO) {}
+			}
+			
+// checkbox click handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			protected function checkbox1_clickHandler(event:MouseEvent):void
+			{
+				show_baseline = !show_baseline;
+			}
+			
+			protected function checkbox2_clickHandler(event:MouseEvent):void {
+				show_new = !show_new;
+			}
+			
+//ensures that only numbers are entered into the grid ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+			protected function radiobutton4_clickHandler(event:MouseEvent):void
+			{
+				freq_type = 1; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+
+			protected function radiobutton5_clickHandler(event:MouseEvent):void
+			{
+				freq_type = 2; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+
+			protected function radiobutton6_clickHandler(event:MouseEvent):void
+			{
+				freq_type = 3; // 1 - for monthly, 2 - for quarterly, 3 - annual
+				this.updateSeries();
+			}
+
+		]]>
+	</fx:Script>
+	
+<!-- VISUAL LAYOUT ====================================================================================== -->
+	<s:HGroup horizontalCenter="0" verticalCenter="0" width="100%" height="100%" fontSize="14"
+			  horizontalAlign="center" gap="20">
+		<!-- list/button group ++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup width="25%" height="100%">
+			<s:VGroup width="100%" height="100%" horizontalAlign="center">
+				<s:Button id="selectScn_btn" label="Upload New Scenario..." 
+						  click="selectScenarioInputFile();"
+						  width="98%" height="3%" 
+						  fontWeight="bold" fontSize="12" fontFamily="Georgia"/>
+				
+				<mx:HRule width="98%" height="7%"/>
+				
+				<s:Label text="Model Input Indicators" width="98%" fontWeight="bold" fontSize="13"/>
+				
+				<s:List id="indicatorList" width="95%" height="50%" 
+						dataProvider="{indListDataProvider}"
+						labelField="IndicatorName" 
+						change="indicatorList_changeHandler(event)" 
+						borderVisible="false" borderAlpha="1.0">
+					<s:layout>
+						<s:VerticalLayout horizontalAlign="justify" gap="1"/>
+					</s:layout>
+				</s:List>
+				
+				<mx:HRule width="98%" height="7%"/>
+				<s:Button id="reset_data_btn" label="Reset Scenario Data" width="98%"
+						  click="resetScnData()" fontWeight="bold" height="3%" fontFamily="Georgia" fontSize="12" enabled="true"/>
+				<!-- baseline upload button -->
+				<!-- allows to upload baseline - mostly for developer use and shouldn't be available to users -->
+				<!-- set "includeInLayout" to true to use -->
+				<s:Button id="selectBL_btn" label="Upload Baseline Scenario Data File" 
+						  click="selectBaselineFile();" includeInLayout="false"
+						  width="98%" height="3%" />
+				<s:Button id="resetHist_btn" label="Reset Historic Data" 
+						   visible="true"
+						   enabled="false"
+						  click='Alert.show("Are you sure you want to reset historic data?"
+						  					+" ALL user input will be erased.",
+						 					"Confirmation requested",
+						  					Alert.YES|Alert.NO,
+						  					this, resetHistoricData, null,
+						 					Alert.YES);' 
+						  height="3%" width="98%" fontWeight="bold" fontFamily="Georgia" fontSize="12"/>
+				<s:Button id="selectHist_btn" label="Upload Historic Data File" 
+						  click="selectHistoricFile();" height="3%" 
+						  width="98%" fontWeight="bold" fontFamily="Georgia" fontSize="12" enabled="false"/>
+				
+				<mx:HRule width="98%" height="7%"/>
+				<!-- save grid changes button -->
+				<!-- allows to save changes in the grid, disabled for now -->
+				<!-- set "includeInLayout" to true to use -->
+				<s:Button id="save_btn" label="Save Changes To Scenario" width="98%" enabled="false"
+						  click="saveChanges()" fontWeight="bold" height="3%" includeInLayout="false"/>
+			</s:VGroup>
+		</s:VGroup>
+		<!-- end of list/button group +++++++++++++++++++++++++++++++++++++ -->
+		
+		<!-- chart group ++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup verticalAlign="bottom" width="50%" height="100%" horizontalAlign="center" gap="3">
+			<!-- chart label subgroup -->
+			<s:HGroup height="6%" width="100%" gap="10" horizontalAlign="center">
+				<s:Label id="chart1_label" text="" 
+						 verticalAlign="middle" textAlign="center" 
+						 width="95%" height="100%" fontWeight="bold" fontSize="14"/>
+			</s:HGroup>
+			
+			<!-- baseline/new selector subgroup -->
+			<s:HGroup height="4%" width="100%" gap="10" horizontalAlign="center">
+				<s:HGroup width="40%" height="100%">		
+					<s:CheckBox label="Baseline" 
+								click="checkbox1_clickHandler(event)" 
+								selected="true" width="50%" height="100%" 
+								fontFamily="Georgia" fontSize="11"/>
+					<s:CheckBox label="New Scenario" 
+								click="checkbox2_clickHandler(event)" 
+								selected="true" height="100%" width="50%" fontFamily="Georgia" fontSize="11"/>
+				</s:HGroup>
+				
+				<s:HGroup width="60%" height="100%" horizontalAlign="center">
+					<s:RadioButton label="Monthly" groupName="radiogroup2"
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+								   click="radiobutton4_clickHandler(event)"
+								   enabled="{(1 - sel_indi_freq) >= 0}"
+								   selected="{sel_indi_freq == 1}"
+								   />
+					
+					<s:RadioButton label="Quarterly" groupName="radiogroup2" 
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+								   click="radiobutton5_clickHandler(event)"
+								   enabled="{(2 - sel_indi_freq) >= 0}"
+								   selected="{sel_indi_freq == 2}"/>
+					
+					<s:RadioButton label="Annual" groupName="radiogroup2" 
+								   width="33%" height="100%"
+								   fontFamily="Georgia" fontSize="11" 
+								   click="radiobutton6_clickHandler(event)"
+								   enabled="{(3 - sel_indi_freq) >= 0}"
+								   selected="{sel_indi_freq == 3}"/>
+				</s:HGroup>
+				
+			</s:HGroup>
+			
+			<!-- actual value chart sublabel -->
+			<s:Label id="chart1_sublabel" text="Levels" 
+					 verticalAlign="middle" textAlign="center" 
+					 width="100%" height="4%" fontWeight="bold" fontSize="12" fontFamily="Georgia"/>
+			
+			<!-- actual value chart -->
+			<mx:LineChart id="indicatorValueChart" height="37%" width="95%"
+						  showDataTips="true" seriesFilters="[]" 
+						  fontFamily="Georgia">
+				<mx:horizontalAxis>
+					<mx:CategoryAxis id="hAxis" categoryField="period"/>
+				</mx:horizontalAxis>
+				<mx:verticalAxis >
+					<mx:LinearAxis baseAtZero="false" id="vAxis"
+								   labelFunction="valueAxisLabelFunction"/>
+				</mx:verticalAxis>
+				<mx:horizontalAxisRenderers>
+					<mx:AxisRenderer axis="{hAxis}" canDropLabels="true" 
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+				</mx:horizontalAxisRenderers>
+				<mx:verticalAxisRenderers>
+					<mx:AxisRenderer axis="{vAxis}" 
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+				</mx:verticalAxisRenderers>
+				<mx:series>
+					<!--mx:LineSeries displayName="Historic" yField="history"
+								   fill="{hist_out_fill}" stroke="{hist_out}" 
+								   lineStroke="{hist_out}"/>
+					<mx:LineSeries yField="connect" interactive="false"
+								   lineStroke="{hist_out}"/-->
+					<mx:LineSeries displayName="Baseline" yField="base"
+								   fill="{base_out_fill}" stroke="{base_out}" 
+								   lineStroke="{base_out}" visible="{show_baseline}"/>
+					<mx:LineSeries displayName="New scenario" yField="newScn"
+								   fill="{new_out_fill}" stroke="{new_out}" 
+								   lineStroke="{new_out}" visible="{show_new}"/>
+				</mx:series>
+			</mx:LineChart>		
+
+			<!-- growth rate chart sublabel -->
+			
+			
+			<!-- growth rate selector subgroup -->
+			<s:HGroup width="100%" height="4%" horizontalAlign="center" visible="true">
+				<!--<s:RadioButton label="M-on-M" groupName="radiogroup1"
+							   width="20%" height="100%"
+							   click="radiobutton1_clickHandler(event)" 
+							   enabled="false"
+							   selected="{sel_indi_freq == 1}"/>
+				<s:RadioButton label="Q-on-Q" groupName="radiogroup1" 
+							   width="20%" height="100%"
+							   click="radiobutton2_clickHandler(event)" 
+							   enabled="false"
+							   selected="{sel_indi_freq == 2}"/>
+				<s:RadioButton label="Yr-on-Yr" groupName="radiogroup1" 
+							   width="20%" height="100%"
+							   click="radiobutton3_clickHandler(event)" 
+							   enabled="true"
+							   selected="true"
+							   />!-->
+				<mx:HSlider id="slaider_input" width="80%" thumbCount="2"
+							minimum="1" maximum="432" height="100%"
+							creationComplete="slaider_init(event)"
+							snapInterval="1"  tickInterval="24" enabled="true"
+							allowTrackClick="true"
+							change="slaider_input_changeHandler(event)"
+						    labels="{timeUnitNames}"
+							dataTipFormatFunction="dataTipFunc_slider"
+							labelStyleName="sliderLabelStyleName"/>
+			</s:HGroup>
+			<s:Label id="chart2_sublabel" text="Growth Rate"
+					 width="100%" height="4%" fontWeight="bold"
+					 verticalAlign="middle" textAlign="center" fontSize="12" fontFamily="Georgia"/>
+			
+			<!-- growth rate chart -->
+			<mx:ColumnChart id="indicatorValueChart2" height="37%" width="95%"
+							showDataTips="true" seriesFilters="[]" 
+							fontFamily="Georgia">					
+				<mx:horizontalAxis>
+					<mx:CategoryAxis id="hAxis2" categoryField="period"/>
+				</mx:horizontalAxis>
+				<mx:verticalAxis>
+					<mx:LinearAxis baseAtZero="false" id="vAxis2"
+								   labelFunction="growthAxisLabelFunction"/>
+				</mx:verticalAxis>
+				<mx:horizontalAxisRenderers>
+					<mx:AxisRenderer axis="{hAxis2}" canDropLabels="true" 
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"
+									 />
+				</mx:horizontalAxisRenderers>
+				<mx:verticalAxisRenderers>
+					<mx:AxisRenderer axis="{vAxis2}" 
+									 axisStroke="{axis_stroke}"
+									 tickStroke="{tick_stroke}"
+									 tickPlacement="outside"
+									 minorTickPlacement="none"
+									 tickLength="5"/>
+				</mx:verticalAxisRenderers>
+				<mx:series>
+					<mx:ColumnSeries displayName="Baseline" 
+									 yField="base"
+									 fill="{base_out_fill}"
+									 visible="{show_baseline}"/>
+					<mx:ColumnSeries displayName="New scenario" 
+									 yField="newScn"
+									 fill="{new_out_fill}"
+									 visible="{show_new}"/>
+				</mx:series>
+			</mx:ColumnChart>
+			
+			<!-- legend/slider subgroup -->
+			<s:HGroup height="4%" width="100%" verticalAlign="top">
+				<mx:Legend width="100%" height="100%"
+						   direction="horizontal" fontSize="14">
+					<!--mx:LegendItem label="Historic" fill="{hist_out_fill}"/-->
+					<mx:LegendItem label="Baseline" fill="{base_out_fill}"/>
+					<mx:LegendItem label="New scenario" fill="{new_out_fill}"/>
+				</mx:Legend>
+			</s:HGroup>
+		</s:VGroup>
+		<!-- end of chart group +++++++++++++++++++++++++++++++++++++++++++ -->
+		
+		<!-- datagrid group +++++++++++++++++++++++++++++++++++++++++++++++ -->
+		<s:VGroup width="25%" height="100%" verticalAlign="middle" horizontalAlign="center"
+				  paddingLeft="3">
+			<!-- datagrid -->
+			<mx:DataGrid id="inputDataGrid" height="99%" width="95%"
+						 draggableColumns="false" editable="true" 
+						 sortableColumns="false"
+						 itemFocusOut="itemEditComplete(event)" 
+						 dataProvider="{this.gridDataProvider}"
+						 lockedColumnCount="1" alternatingItemColors="[white, #D3D3D3]" 
+						 textAlign="center" verticalAlign="middle" fontSize="12" 
+						 fontWeight="normal">
+				<mx:columns>
+					<mx:DataGridColumn headerText="Period" dataField="period" id="periodCol"
+									   editable="false" headerWordWrap="true" 
+									   headerStyleName="boldHeaderStyle" width="100"/>
+					<mx:DataGridColumn headerText="Indicator" dataField="ind1" id="valueCol"
+									   headerStyleName="boldHeaderStyle"
+									   editable="false" headerWordWrap="true" 
+									   itemRenderer="inputControls.InputGridItemRenderer"/>
+				</mx:columns>
+			</mx:DataGrid>
+
+		</s:VGroup>
+		<!-- end of chart/grid group ++++++++++++++++++++++++++++++++++++++ -->
+	</s:HGroup>
+	
+</s:Group>
