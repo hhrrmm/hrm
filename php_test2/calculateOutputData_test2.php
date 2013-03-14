@@ -1,0 +1,313 @@
+<?php
+
+/*
+** Used to calculate model outputs
+*/
+
+include 'ForecastCalculator_test2.php';
+include 'XMLgeneration.php';
+include 'MySQLConnectionDataProvider.php';
+include 'dbFunctions_test2.php';
+
+$adjust_values = true;
+$duration = 60; //24;
+
+$SID = $_GET['sessionID']; $scenID = $_GET['scenarioID'];
+
+$credentials = new MySQLConnectionDataProvider();
+
+$link = mysql_connect($credentials->address, $credentials->usr, $credentials->pw);
+mysql_select_db($credentials->DB);
+
+$cleanup_query  = "DELETE FROM ConsultingMQ.hr_scenario_test2 WHERE sessionID='"
+		.$SID."' AND TimeID>0 AND IndicatorID>0";
+
+mysql_query($cleanup_query);
+
+//if the input data is not in the scenario table, insert it ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$check_query = "SELECT * FROM ConsultingMQ.hr_scenario_test2 WHERE ScenarioID='".$scenID."'";
+
+$check = mysql_query($check_query);
+
+if ($check) {
+	$n_rows = mysql_num_rows($check);
+	if ($n_rows == 0) {
+		$insert_input  = "INSERT INTO ConsultingMQ.hr_scenario_test2"
+						."(ScenarioID, TimeID, IndicatorID, DataValue, sessionID)"
+						." SELECT '".$scenID."', TimeID, IndicatorID, DataValue, SessionID"
+						." FROM ConsultingMQ.hr_input_test2"
+						." WHERE SessionID='".$SID."'";
+		
+		mysql_query($insert_input);
+	} //if n_rows = 0
+	/*else {
+		echo "DB_Error";
+		exit;
+	}*/
+}//if check
+else {
+	echo "DB_Error";
+	exit;
+}
+
+//get the necessary data from the database ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//query the database for the data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$query  = "SELECT scenarioID, hr3_calc_view_test2.TimeID, TimeName, IndicatorID, DataValue "
+		. " FROM ConsultingMQ.hr3_calc_view_test2, ConsultingMQ.hr_timeID_test2 "
+		. " WHERE ConsultingMQ.hr_timeID_test2.TimeID = hr3_calc_view_test2.TimeID "
+		. " AND ConsultingMQ.hr_timeID_test2.PeriodType = 1 "
+		. " AND scenarioID='".$scenID."' "
+		. " ORDER BY ConsultingMQ.hr3_calc_view_test2.TimeID";
+
+$select_result = mysql_query($query);
+
+//if the query is succesful, parse the received data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if ($select_result) {
+	//arrays for data
+	$timeIDs[]      = ""; $timeNames[] = "";
+	$inds1[]        = ""; $inds2[]     = "";
+	$inds3[]        = ""; $inds4[]     = "";
+	$inds5[]        = ""; $inds6[]     = "";
+	$inds7[]        = ""; $inds8[]     = "";
+	$inds9[]        = ""; $inds10[]    = "";
+	$inds11[]       = ""; $inds12[]    = "";
+	$inds13[]       = ""; $inds14[]    = "";
+	$inds15[]       = ""; $inds16[]    = "";
+
+	$i = 0;
+	$currentTime = 1;
+	while ($row = mysql_fetch_array($select_result, MYSQL_ASSOC)) {
+		$time = $row['TimeID'];
+		if ($time > $currentTime) {
+			$i += 1;
+			$currentTime = $time;
+		}
+		$timeIDs[$i] = $currentTime;
+		$timeNames[$i] = $row['TimeName'];
+
+		$indicator = $row['IndicatorID'];
+		switch($indicator) {
+			case "1":
+				$inds1[$i] = $row['DataValue'];
+				break;
+
+			case "2":
+				$inds2[$i] = $row['DataValue'];
+				break;
+			
+			case "3":
+				$inds3[$i] = $row['DataValue'];
+				break;
+
+			case "4":
+				$inds4[$i] = $row['DataValue'];
+				break;
+
+			case "5":
+				$inds5[$i] = $row['DataValue'];
+				break;
+
+			case "6":
+				$inds6[$i] = $row['DataValue'];
+				break;
+
+			case "7":
+				$inds7[$i] = $row['DataValue'];
+				break;
+
+			case "8":
+				$inds8[$i] = $row['DataValue'];
+				break;
+
+			case "9":
+				$inds9[$i] = $row['DataValue'];
+				break;
+
+			case "10":
+				$inds10[$i] = $row['DataValue'];
+				break;
+
+			case "11":
+				$inds11[$i] = $row['DataValue'];
+				break;
+
+			case "12":
+				$inds12[$i] = $row['DataValue'];
+				break;
+				
+            case "13":
+				$inds13[$i] = $row['DataValue'];
+				break;
+				
+			case "14":
+				$inds14[$i] = $row['DataValue'];
+				break;
+				
+			case "15":
+				$inds15[$i] = $row['DataValue'];
+				break;
+				
+			case "16":
+				$inds16[$i] = $row['DataValue'];
+				break;
+		}// switch row[IndicatorID];
+	}//while row
+	
+}//if fetch_result
+else {
+	echo "DB_Error";
+	exit;
+}
+
+//get the last forecast timeID
+	$qry2 = "SELECT historyEnd as TimeID FROM `ConsultingMQ`.`hr_indicator_test2` where IndicatorID = 13";
+	$qry2_result = mysql_query($qry2);								
+	if ($qry2_result) {	
+		$line = mysql_fetch_array($qry2_result, MYSQL_ASSOC);
+		$last_timeID = $line['TimeID'] + $duration;		
+	} else {
+		echo "DB_Error in LastHistoric";
+		exit;
+	};	
+	
+//get the timeIDs of the first and last non-historic periods ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$first_timeID = 0;
+//$last_timeID  = 444;
+
+$period_query   = "SELECT mTimeID AS minTimeID, Max(ConsultingMQ.hr_scenario_test2.TimeID) AS maxTimeID "
+				. " FROM ConsultingMQ.hr0_test2, ConsultingMQ.hr_scenario_test2 INNER JOIN ConsultingMQ.hr_timeID_test2 "
+				. " ON ConsultingMQ.hr_timeID_test2.TimeID=ConsultingMQ.hr_scenario_test2.TimeID "
+				. " WHERE ConsultingMQ.hr0_test2.PeriodType=1 AND ConsultingMQ.hr_timeID_test2.PeriodType=1 AND scenarioID='".$scenID."'";
+
+$period_result = mysql_query($period_query);
+
+if ($period_result) {
+	while ($row = mysql_fetch_array($period_result, MYSQL_ASSOC)) {
+		$first_timeID = $row['minTimeID'];
+		//$last_timeID  = $row['maxTimeID'];
+	}	
+}
+else {
+	echo "DB_Error";
+	exit;
+}
+
+$f = new ForecastCalculator_test2($timeIDs, $timeNames, $inds1, $inds2, $inds3, $inds4, $inds5, $inds6, $inds7, $inds8,
+						$inds9, $inds10, $inds11, $inds12, $inds13, $inds14, $inds15, $inds16);
+
+$inds15 = $f->calculateForecasts($first_timeID, $last_timeID, true, true);
+
+if($inds15 == "DB_Error") {
+	echo "DB_Error";
+	exit;
+}
+else{
+	for ($j = $first_timeID-12; $j < $last_timeID; $j++) {
+		if ($inds13[$j] == "") {
+			$inds14[$j] = "";
+		} else {
+			$inds14[$j] = $inds13[$j]*$inds11[$j];
+		}
+		
+		$inds16[$j] = $inds15[$j]*$inds11[$j];
+					
+		if ($inds13[$j] == "") {
+			$inds8[$j] = $inds15[$j];
+		}	else {
+			$inds8[$j] = $inds13[$j];
+		}
+	}
+}
+
+$update_result = updateTable($inds14, $inds15, $inds16, $timeIDs, $first_timeID, $last_timeID, 1, $scenID);
+
+if ($update_result != "Success") {
+	echo $update_result;
+	exit;
+}
+
+//get annual data values ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$annualTimeIDs[]   = "";
+$annualTimeNames[] = "";
+$annualInds2[]     = ""; $annualInds3[]  = ""; 
+$annualInds4[]     = ""; $annualInds5[]  = "";
+$annualInds7[]     = ""; $annualInds10[] = "";
+
+$annualData_query   = "SELECT ConsultingMQ.hr_timeID_test2.TimeID, TimeName, IndicatorID, DataValue "
+					. " FROM ConsultingMQ.hr3_calc_view_test2, ConsultingMQ.hr_timeID_test2 "
+					. " WHERE ConsultingMQ.hr_timeID_test2.TimeID=ConsultingMQ.hr3_calc_view_test2.TimeID "
+					. " AND PeriodType=3 AND scenarioID='".$scenID."' ORDER BY ConsultingMQ.hr_timeID_test2.TimeID";
+					
+$ad_result = mysql_query($annualData_query);
+
+$i = 0;
+if ($ad_result) {
+	while($row = mysql_fetch_array($ad_result, MYSQL_ASSOC)) {
+				$time = $row['TimeID'];
+		if ($time > $currentTime) {
+			$i += 1;
+			$currentTime = $time;
+		}
+		$annualTimeIDs[$i] = $currentTime;
+		$annualTimeNames[$i] = $row['TimeName'];
+
+		$indicator = $row['IndicatorID'];
+		switch($indicator) {
+			case "2":
+				$annualInds2[$i] = $row['DataValue'];
+				break;
+			
+			case "3":
+				$annualInds3[$i] = $row['DataValue'];
+				break;
+
+			case "4":
+				$annualInds4[$i] = $row['DataValue'];
+				break;
+
+			case "5":
+				$annualInds5[$i] = $row['DataValue'];
+				break;
+
+			case "7":
+				$annualInds7[$i] = $row['DataValue'];
+				break;
+				
+			case "10":
+				$annualInds10[$i] = $row['DataValue'];
+				break;
+		}// switch row[IndicatorID];
+	}//while row
+}
+else {
+	echo "DB_Error9";
+	exit;
+}
+
+//prepare and echo the results ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+$results = "<entries>";
+for ($l = 0; $l < count($timeNames); $l++) {
+	$results.="<entry>";
+	
+	$results .= formMonthlyDataXML($timeNames[$l], $inds1[$l], $inds2[$l], $inds3[$l], $inds4[$l], 
+									$inds5[$l], $inds6[$l], $inds7[$l], $inds8[$l],
+									$inds9[$l], $inds10[$l], $inds11[$l], $inds12[$l], 
+									$inds13[$l], $inds14[$l], $inds15[$l], $inds16[$l]);
+
+	//if data is for the 12th month, append annual data as well
+	if (substr($timeNames[$l], 4, strlen($timeNames[$l])-4) == "M12") {
+		$m = array_keys($annualTimeNames, substr($timeNames[$l], 0, 4));
+		if ($m) {
+			$results.= formAnnualDataXML($annualTimeNames[$m[0]], $annualInds2[$m[0]], $annualInds3[$m[0]],
+										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]]);
+		}		
+	}
+
+	$results.= "</entry>";	
+}
+
+$results .= "</entries>";
+
+echo $results;
+
+?>
