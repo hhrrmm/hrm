@@ -7,3 +7,5 @@
 /libs
 /services
 /src/services/base/_Super_Base.as
+*.jpg
+*.gif
