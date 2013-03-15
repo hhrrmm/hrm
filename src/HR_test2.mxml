@@ -135,9 +135,9 @@
 			public var scenarioID:String;
 			public var sessionID :String;
 			//external
-			public var address   :String  = "213.197.173.50";
+			//public var address   :String  = "213.197.173.50";
 			//internal
-			//public var address   :String  = "192.168.44.200"; 
+			public var address   :String  = "192.168.44.200"; 
 			
 			//public var hra2:String = "HR";
 			//public var hra_end2:String = "_test";			
@@ -608,8 +608,8 @@
 			private function attemptLogin():void {
 				loginService.url = "http://" + address 
 								 + "/Consulting/ConsultingMQ/" + hra2 + "/login" + hra_end2 + ".php?"
-								 + 'usr="Hill-Rom"'
-								 //+ 'usr="HR-test"'
+								 //+ 'usr="Hill-Rom"'
+								 + 'usr="HR-test"'
 								 + "&pw="  + passwordPrompt.text
 								 + "&tmp=" + String(Math.round(Math.random()*1000));
 				loginService.send();

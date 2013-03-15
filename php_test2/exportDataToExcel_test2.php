@@ -16,7 +16,7 @@ $link = mysql_connect($credentials->address, $credentials->usr, $credentials->pw
 mysql_select_db($credentials->DB);
 
 //get the last forecast timeID"
-	$qry2 = "SELECT historyEnd as TimeID FROM `ConsultingMQ`.`hr_indicator_test2` where IndicatorID = 13";
+	$qry2 = "SELECT historyEnd as TimeID FROM `ConsultingMQ`.`hr_indicator_test2` where IndicatorID = 23";
 	$qry2_result = mysql_query($qry2);								
 	if ($qry2_result) {	
 		$line = mysql_fetch_array($qry2_result, MYSQL_ASSOC);
@@ -55,9 +55,9 @@ if ($select_result) {
 	$timeIDs[] = ""; $timeNames[] = "";
 	$inds1[]   = ""; $inds2[]     = ""; $inds3[]  = ""; $inds4[]  = "";
 	$inds5[]   = ""; $inds6[]     = "";	$inds7[]  = ""; $inds8[]  = "";
-	$inds9[]   = ""; $inds10[]    = "";	$inds11[] = ""; $inds12[] = "";
-	$inds13[]  = ""; $inds14[]    = "";	$inds15[] = ""; $inds16[] = "";
-	$inds17[]  = ""; 
+	$inds9[]   = ""; $inds10[]    = "";	$inds21[] = ""; $inds22[] = "";
+	$inds23[]  = ""; $inds24[]    = "";	$inds25[] = ""; $inds26[] = "";
+	$inds27[]  = ""; 
 
 	$i = 0; $j = 0;
 	$currentTime = 1;
@@ -114,28 +114,28 @@ if ($select_result) {
 				$inds10[$i] = $row['DataValue'];
 				break;
 
-			case "11":
-				$inds11[$i] = $row['DataValue'];
+			case "21":
+				$inds21[$i] = $row['DataValue'];
 				break;
 
-			case "12":
-				$inds12[$i] = $row['DataValue'];
+			case "22":
+				$inds22[$i] = $row['DataValue'];
 				break;
 				
-            case "13":
-				$inds13[$i] = $row['DataValue'];
+            case "23":
+				$inds23[$i] = $row['DataValue'];
 				break;
 				
-			case "14":
-				$inds14[$i] = $row['DataValue'];
+			case "24":
+				$inds24[$i] = $row['DataValue'];
 				break;
 				
-			case "15":
-				$inds15[$i] = $row['DataValue'];
+			case "25":
+				$inds25[$i] = $row['DataValue'];
 				break;
 				
-			case "16":
-				$inds16[$i] = $row['DataValue'];
+			case "26":
+				$inds26[$i] = $row['DataValue'];
 				break;
 		}// switch row[IndicatorID];
 	}//while row
@@ -159,18 +159,18 @@ if ($select_result) {
 	$j2 = -2;
 	
 	for ($j = 0; $j < count($timeIDs); $j++) {
-		if ($inds13[$j] == "") {
-			if ($inds15[$j] == "") {
-				$inds17[$j] = "";
+		if ($inds23[$j] == "") {
+			if ($inds25[$j] == "") {
+				$inds27[$j] = "";
 			}
 			else {
-				if ($inds12[$j]==0 || $inds12[$j]=="") {$inds17[$j] = "";}
-				else {$inds17[$j] = ($inds16[$j]/$inds12[$j]);}
+				if ($inds22[$j]==0 || $inds22[$j]=="") {$inds27[$j] = "";}
+				else {$inds27[$j] = ($inds26[$j]/$inds22[$j]);}
 			}
 		}
 		else {
-			if ($inds12[$j]==0 || $inds12[$j]=="") {$inds17[$j] = "";}
-			else {$inds17[$j] = ($inds14[$j]/$inds12[$j]);}
+			if ($inds22[$j]==0 || $inds22[$j]=="") {$inds27[$j] = "";}
+			else {$inds27[$j] = ($inds24[$j]/$inds22[$j]);}
 		}
 		
 		if (substr($timeNames[$j],0,4) > $t) {
@@ -191,29 +191,29 @@ if ($select_result) {
 		//jei idetume paskutiniu triju menesiu suma
 		//..ir po to ja atimtume is normaliu metiniu sumos			
 		
-		if ($inds13[$j] == "") {
-			$aggregateUnits[$j2] += round($inds15[$j],0);
-			$aggregateValue[$j2] += $inds16[$j];
-			$aggregateValueMrkt[$j2] += $inds17[$j];
-		//$aggregateValue[$j2] += $inds16[$j];
+		if ($inds23[$j] == "") {
+			$aggregateUnits[$j2] += round($inds25[$j],0);
+			$aggregateValue[$j2] += $inds26[$j];
+			$aggregateValueMrkt[$j2] += $inds27[$j];
+		//$aggregateValue[$j2] += $inds26[$j];
 		}
 		else {			
-			$aggregateUnits[$j2] += $inds13[$j];
-			$aggregateValue[$j2] += $inds14[$j];
-			$aggregateValueMrkt[$j2] += $inds17[$j];
-			//$aggregateValue[$j2] += $inds14[$j];
+			$aggregateUnits[$j2] += $inds23[$j];
+			$aggregateValue[$j2] += $inds24[$j];
+			$aggregateValueMrkt[$j2] += $inds27[$j];
+			//$aggregateValue[$j2] += $inds24[$j];
 		}	
 	
 		$idas = substr($timeNames[$j],5,strlen($timeNames[$j])-1);		
 		if ($idas > 9)  {									
-			if ($inds13[$j] == "") {
-				$aggUnitsQuat[$j] = $aggUnitsQuat[$j-1] + round($inds15[$j],0);				
-				$aggValueQuat[$j] = $aggValueQuat[$j-1] + $inds16[$j];
-				$aggValueQuatMrkt[$j] = $aggValueQuatMrkt[$j-1] + $inds17[$j];
+			if ($inds23[$j] == "") {
+				$aggUnitsQuat[$j] = $aggUnitsQuat[$j-1] + round($inds25[$j],0);				
+				$aggValueQuat[$j] = $aggValueQuat[$j-1] + $inds26[$j];
+				$aggValueQuatMrkt[$j] = $aggValueQuatMrkt[$j-1] + $inds27[$j];
 			} else {			
-				$aggUnitsQuat[$j] = $aggUnitsQuat[$j-1] + $inds13[$j];
-				$aggValueQuat[$j] = $aggValueQuat[$j-1] + $inds14[$j];
-				$aggValueQuatMrkt[$j] = $aggValueQuatMrkt[$j-1] + $inds17[$j];
+				$aggUnitsQuat[$j] = $aggUnitsQuat[$j-1] + $inds23[$j];
+				$aggValueQuat[$j] = $aggValueQuat[$j-1] + $inds24[$j];
+				$aggValueQuatMrkt[$j] = $aggValueQuatMrkt[$j-1] + $inds27[$j];
 			};
 		} else {
 			$aggUnitsQuat[$j] = 0;		
@@ -278,12 +278,12 @@ if ($select_result) {
 		$key = array_keys($timeIDs, $ebp_timeIDs[$n]);
 		
 		if ($key) {
-			if ($inds13[$key[0]] == "") {
-				if ($inds15[$key[0]] <> "") {
-					$a = $inds15[$key[0]]*$error_bound_params[$n];
+			if ($inds23[$key[0]] == "") {
+				if ($inds25[$key[0]] <> "") {
+					$a = $inds25[$key[0]]*$error_bound_params[$n];
 
-					$upper_bounds[$n] = $inds15[$key[0]]+$a;
-					$lower_bounds[$n] = $inds15[$key[0]]-$a;
+					$upper_bounds[$n] = $inds25[$key[0]]+$a;
+					$lower_bounds[$n] = $inds25[$key[0]]-$a;
 				}
 				else {
 					$upper_bounds[$n] = "";
@@ -499,35 +499,35 @@ for ($n = -1; $n < count($aggTimeIDs)-1; $n++) {
 			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(1, $m-$n+3, $inds1[$m]);
 			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(2, $m-$n+3, $inds6[$m]);
 		
-			if ($inds13[$m] == "") {
-				if ($inds15[$m] <> "") {
-					$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(3,  $m-$n+3, round($inds15[$m],0));
+			if ($inds23[$m] == "") {
+				if ($inds25[$m] <> "") {
+					$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(3,  $m-$n+3, round($inds25[$m],0));
 				}
 			}
 			else{
-				$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(3,  $m-$n+3, $inds13[$m]);
+				$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(3,  $m-$n+3, $inds23[$m]);
 			}
 		
 			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(4, $m-$n+3, $inds9[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(5, $m-$n+3, $inds11[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(6, $m-$n+3, $inds12[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(5, $m-$n+3, $inds21[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(6, $m-$n+3, $inds22[$m]);
 			
 			
-			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, $inds15[$m]);
-			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds16[$m]);
+			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, $inds25[$m]);
+			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds26[$m]);
 			
-			if ($inds13[$m] == "") {
-				if ($inds15[$m] <> "") {
-					//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, round($inds15[$m],0));
-					$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds16[$m]);
+			if ($inds23[$m] == "") {
+				if ($inds25[$m] <> "") {
+					//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, round($inds25[$m],0));
+					$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds26[$m]);
 				}
 			}
 			else {
-				//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, round($inds13[$m],0));
-				$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds14[$m]);
+				//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(7, $m-$n+3, round($inds23[$m],0));
+				$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(8 - 1, $m-$n+3, $inds24[$m]);
 			}
 			
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(9 - 1, $m-$n+3, $inds17[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(9 - 1, $m-$n+3, $inds27[$m]);
 
 						
 			if ($m >= $fTimeID) {				

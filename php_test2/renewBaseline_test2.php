@@ -18,7 +18,7 @@ function renew_Baseline() {
 			. " FROM ConsultingMQ.hr_historic_test2 "
 			. " WHERE ConsultingMQ.hr_historic_test2.TimeID >= 348 AND ConsultingMQ.hr_historic_test2.TimeID <= "
 			.$last_timeID
-			." AND IndicatorID < 13 ORDER BY TimeID";
+			." AND IndicatorID < 20 ORDER BY TimeID";
 			
 	$result = mysql_query($Hist_query);
 	
@@ -30,7 +30,7 @@ function renew_Baseline() {
 		$inds5[]        = ""; $inds6[]     = "";
 		$inds7[]        = ""; $inds8[]     = "";
 		$inds9[]        = ""; $inds10[]    = "";
-		$inds11[]       = ""; $inds12[]    = "";
+		$inds21[]       = ""; $inds22[]    = "";
 
 		$out = "";
 		$i = 0;
@@ -85,12 +85,12 @@ function renew_Baseline() {
 					$inds10[$i] = $row['DataValue'];
 					break;
 
-				case "11":
-					$inds11[$i] = $row['DataValue'];
+				case "21":
+					$inds21[$i] = $row['DataValue'];
 					break;
 
-				case "12":
-					$inds12[$i] = $row['DataValue'];
+				case "22":
+					$inds22[$i] = $row['DataValue'];
 					break;
 			}// switch row[IndicatorID];
 		}//while row
@@ -101,7 +101,7 @@ function renew_Baseline() {
 
 //retrieve growth rates of baseline data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	$rate_query = "SELECT TimeID, IndicatorID, Rate FROM ConsultingMQ.hr_growthRates_test2 "
-				. " WHERE IndicatorID < 13 AND TimeID<=".$last_timeID." ORDER BY TimeID";
+				. " WHERE IndicatorID < 20 AND TimeID<=".$last_timeID." ORDER BY TimeID";
 	
 	$r_result = mysql_query($rate_query);
 	
@@ -113,7 +113,7 @@ function renew_Baseline() {
 		$rates5[]        = ""; $rates6[]     = "";
 		$rates7[]        = ""; $rates8[]     = "";
 		$rates9[]        = ""; $rates10[]    = "";
-		$rates11[]       = ""; $rates12[]    = "";
+		$rates21[]       = ""; $rates22[]    = "";
 
 		$i = 1;
 		$currentTime = 1;
@@ -167,12 +167,12 @@ function renew_Baseline() {
 					$rates10[$i] = $row['Rate'];
 					break;
 
-				case "11":
-					$rates11[$i] = $row['Rate'];
+				case "21":
+					$rates21[$i] = $row['Rate'];
 					break;
 
-				case "12":
-					$rates12[$i] = $row['Rate'];
+				case "22":
+					$rates22[$i] = $row['Rate'];
 					break;
 			}// switch row[IndicatorID];
 		}//while row
@@ -194,8 +194,8 @@ function renew_Baseline() {
 		if ($inds8[$j]  == "") { $inds8[$j]  = $inds8[$j-1] *$rates8[$j];}
 		if ($inds9[$j]  == "") { $inds9[$j]  = $inds9[$j-1] *$rates9[$j];}
 		if ($inds10[$j] == "") { $inds10[$j] = $inds10[$j-1]*$rates10[$j];}
-		if ($inds11[$j] == "") { $inds11[$j] = $inds11[$j-1]*$rates11[$j];}
-		if ($inds12[$j] == "") { $inds12[$j] = $inds12[$j-1]*$rates12[$j];}
+		if ($inds21[$j] == "") { $inds21[$j] = $inds21[$j-1]*$rates21[$j];}
+		if ($inds22[$j] == "") { $inds22[$j] = $inds22[$j-1]*$rates22[$j];}
 	}
 
 //update baseline data table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,17 +220,17 @@ function renew_Baseline() {
 				. " WHERE IndicatorID=9 AND TimeID=".$timeIDs[$k];
 		$u_qry10= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds10[$k]
 				. " WHERE IndicatorID=10 AND TimeID=".$timeIDs[$k];
-		$u_qry11= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds11[$k]
-				. " WHERE IndicatorID=11 AND TimeID=".$timeIDs[$k];
-		$u_qry12= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds12[$k]
-				. " WHERE IndicatorID=12 AND TimeID=".$timeIDs[$k];
+		$u_qry21= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds21[$k]
+				. " WHERE IndicatorID=21 AND TimeID=".$timeIDs[$k];
+		$u_qry22= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds22[$k]
+				. " WHERE IndicatorID=22 AND TimeID=".$timeIDs[$k];
 
 		$r1  = mysql_query($u_qry1);  $r2  = mysql_query($u_qry2);
 		$r3  = mysql_query($u_qry3);  $r4  = mysql_query($u_qry4);
 		$r5  = mysql_query($u_qry5);  $r6  = mysql_query($u_qry6);
 		$r7  = mysql_query($u_qry7);  $r8  = mysql_query($u_qry8);
 		$r9  = mysql_query($u_qry9);  $r10 = mysql_query($u_qry10);
-		$r11 = mysql_query($u_qry11); $r12 = mysql_query($u_qry12);
+		$r21 = mysql_query($u_qry21); $r22 = mysql_query($u_qry22);
 	}//for k
 	
 	
@@ -238,7 +238,7 @@ function renew_Baseline() {
 
 //retrieve annual growth rates of baseline data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	$rate_query = "SELECT TimeID, IndicatorID, Rate FROM ConsultingMQ.hr_growthRates_test2 "
-				. " WHERE IndicatorID < 13 AND TimeID>=621 ORDER BY TimeID";
+				. " WHERE IndicatorID < 20 AND TimeID>=621 ORDER BY TimeID";
 	
 	$r_result = mysql_query($rate_query);
 	

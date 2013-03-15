@@ -137,9 +137,10 @@ if ($select_result) {
 	$inds5[]        = ""; $inds6[]     = "";
 	$inds7[]        = ""; $inds8[]     = "";
 	$inds9[]        = ""; $inds10[]    = "";
-	$inds11[]       = ""; $inds12[]    = "";
-	$inds13[]       = ""; $inds14[]    = "";
-	$inds15[]       = ""; $inds16[]       = "";
+// -- - upadtes were here ---	
+	$inds21[]       = ""; $inds22[]    = "";
+	$inds23[]       = ""; $inds24[]    = "";
+	$inds25[]       = ""; $inds26[]       = "";
 
 	$i = 0;
 	$currentTime = 1;
@@ -194,28 +195,28 @@ if ($select_result) {
 				$inds10[$i] = $row['DataValue'];
 				break;
 
-			case "11":
-				$inds11[$i] = $row['DataValue'];
+			case "21":
+				$inds21[$i] = $row['DataValue'];
 				break;
 
-			case "12":
-				$inds12[$i] = $row['DataValue'];
+			case "22":
+				$inds22[$i] = $row['DataValue'];
 				break;
 				
-            case "13":
-				$inds13[$i] = $row['DataValue'];
+            case "23":
+				$inds23[$i] = $row['DataValue'];
 				break;
 				
-			case "14":
-				$inds14[$i] = $row['DataValue'];
+			case "24":
+				$inds24[$i] = $row['DataValue'];
 				break;
 				
-			case "15":
-				$inds15[$i] = $row['DataValue'];
+			case "25":
+				$inds25[$i] = $row['DataValue'];
 				break;
 				
-			case "16":
-				$inds16[$i] = $row['DataValue'];
+			case "26":
+				$inds26[$i] = $row['DataValue'];
 				break;
 		}// switch row[IndicatorID];
 		
@@ -292,8 +293,8 @@ for ($l = 0; $l < count($timeNames); $l++) {
 	
 	$results .= formMonthlyDataXML($timeNames[$l], $inds1[$l], $inds2[$l], $inds3[$l], $inds4[$l], 
 									$inds5[$l], $inds6[$l], $inds7[$l], $inds8[$l],
-									$inds9[$l], $inds10[$l], $inds11[$l], $inds12[$l], 
-									$inds13[$l], $inds14[$l], $inds15[$l], $inds16[$l]);
+									$inds9[$l], $inds10[$l], $inds21[$l], $inds22[$l], 
+									$inds23[$l], $inds24[$l], $inds25[$l], $inds26[$l]);
 
 	//if data is for the 12th month, append annual data as well
 	if (substr($timeNames[$l], 4, strlen($timeNames[$l])-4) == "M12") {

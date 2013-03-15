@@ -39,10 +39,10 @@ if ($select_result) {
 	$inds5[]        = ""; $inds6[]     = "";
 	$inds7[]        = ""; $inds8[]     = "";
 	$inds9[]        = ""; $inds10[]    = "";
-	$inds11[]       = ""; $inds12[]    = "";
-	$inds13[]       = ""; $inds14[]    = "";
-	$inds15[]       = ""; $inds16[]    = "";
-	$round15[]      = "";
+	$inds21[]       = ""; $inds22[]    = "";
+	$inds23[]       = ""; $inds24[]    = "";
+	$inds25[]       = ""; $inds26[]    = "";
+	$round25[]      = "";
 
 	$i = 0;
 	$currentTime = 1;
@@ -97,30 +97,30 @@ if ($select_result) {
 				$inds10[$i] = $row['DataValue'];
 				break;
 
-			case "11":
-				$inds11[$i] = $row['DataValue'];
+			case "21":
+				$inds21[$i] = $row['DataValue'];
 				break;
 
-			case "12":
-				$inds12[$i] = $row['DataValue'];
+			case "22":
+				$inds22[$i] = $row['DataValue'];
 				break;
 				
-            case "13":
-				$inds13[$i] = $row['DataValue'];
+            case "23":
+				$inds23[$i] = $row['DataValue'];
 				break;
 				
-			case "14":
-				$inds14[$i] = $row['DataValue'];
+			case "24":
+				$inds24[$i] = $row['DataValue'];
 				
 				break;
 				
-			case "15":
-				$inds15[$i] = $row['DataValue'];
-				$round15[$i] = round($row['DataValue'],0);
+			case "25":
+				$inds25[$i] = $row['DataValue'];
+				$round25[$i] = round($row['DataValue'],0);
 				break;
 				
-			case "16":
-				$inds16[$i] = $row['DataValue'];
+			case "26":
+				$inds26[$i] = $row['DataValue'];
 				break;
 		}// switch row[IndicatorID];	
 	}//while row
@@ -233,16 +233,16 @@ for ($j = $from-12; $j < $to; $j++) {
 		}
 	}
 	
-	$inds15[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier);
+	$inds25[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier);
 
-	$round15[$j] = round($inds15[$j], 0);
+	$round25[$j] = round($inds25[$j], 0);
 
-	$inds16[$j] = $inds15[$j]*$inds11[$j];
+	$inds26[$j] = $inds25[$j]*$inds21[$j];
 
-	if ($inds13[$j] == "") {
-		$inds8[$j] = $inds15[$j];
+	if ($inds23[$j] == "") {
+		$inds8[$j] = $inds25[$j];
 	} else {
-		$inds8[$j] = $inds13[$j];
+		$inds8[$j] = $inds23[$j];
 	}
 }//for j
 
@@ -291,23 +291,23 @@ $outasF = 0;
 $outasH = 0;
 
 for ($j=0; $j<12; $j++) {
-	if ($inds13[$periodIDs[$j]] == "") { 
+	if ($inds23[$periodIDs[$j]] == "") { 
 	// cia sumuojam forecasta
-		$sum1 += $inds15[$periodIDs[$j]]; 
+		$sum1 += $inds25[$periodIDs[$j]]; 
 	} else { 
 	// cia istorinius
 		
 		if (($periodIDs[$j] == 380)) {//||($periodIDs[$j] == 381)) {
-			$outasF += $inds15[$periodIDs[$j]]; 
-			$outasH += $inds13[$periodIDs[$j]]; 
+			$outasF += $inds25[$periodIDs[$j]]; 
+			$outasH += $inds23[$periodIDs[$j]]; 
 			
-			$sum1 += $inds15[$periodIDs[$j]]; 
+			$sum1 += $inds25[$periodIDs[$j]]; 
 		} else {
-			$sum1 += $inds13[$periodIDs[$j]]; 
+			$sum1 += $inds23[$periodIDs[$j]]; 
 		}
 	}
 	
-	$sum2 += $inds15[$periodIDs[$j]];
+	$sum2 += $inds25[$periodIDs[$j]];
 }
 
 //echo $periodIDs;

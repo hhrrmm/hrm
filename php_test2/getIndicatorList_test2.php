@@ -10,7 +10,8 @@ mysql_select_db('ConsultingMQ');
 $query = "SELECT IndicatorID, IndicatorName, UnitName, IOType, IndicatorType, IsRatio, AggregationType, TimeName AS histEnd "
 		. " FROM ConsultingMQ.hr_indicator_test2 INNER JOIN ConsultingMQ.hr_timeID_test2 "
 		. " ON ConsultingMQ.hr_indicator_test2.historyEnd=ConsultingMQ.hr_timeID_test2.TimeID "
-		. " WHERE IndicatorID<=13 ORDER BY IndicatorID";
+		. " WHERE ( IndicatorID < 20 )
+			ORDER BY IndicatorID";
 
 $result = mysql_query($query);
 
@@ -18,7 +19,7 @@ $answer = "<entries>";
 
 if ($result) {
 	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-		if ($row['IndicatorID'] < 13) {
+		if ( $row['IndicatorID'] < 20 ) {
 			$answer .="<entry>"
 					. "<IndicatorID>".$row['IndicatorID']."</IndicatorID>"
 					. "<IndicatorName>".$row['IndicatorName']."</IndicatorName>"
@@ -32,7 +33,7 @@ if ($result) {
 		}
 		else {
 			$answer .= "<entry>"
-					. "<IndicatorID>13</IndicatorID>"
+					. "<IndicatorID>23</IndicatorID>"
 					. "<IndicatorName>Number of hospital beds</IndicatorName>"
 					. "<UnitName></UnitName>"
 					. "<IOType>1</IOType>"
@@ -42,7 +43,7 @@ if ($result) {
 					. "</entry>";
 					
 			$answer .= "<entry>"
-					. "<IndicatorID>14</IndicatorID>"
+					. "<IndicatorID>24</IndicatorID>"
 					. "<IndicatorName>Sales value of hospital beds</IndicatorName>"
 					. "<UnitName>USD</UnitName>"
 					. "<IOType>1</IOType>"
@@ -52,7 +53,7 @@ if ($result) {
 					. "</entry>";
 					
 			$answer .= "<entry>"
-					. "<IndicatorID>15</IndicatorID>"
+					. "<IndicatorID>25</IndicatorID>"
 					. "<IndicatorName>Total sales value of hospital beds in the United States</IndicatorName>"
 					. "<UnitName></UnitName>"
 					. "<IOType>1</IOType>"

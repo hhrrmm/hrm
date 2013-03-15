@@ -14,20 +14,20 @@ Class ForecastCalculator_test2 {
 	private $inds5;  private $inds6;
 	private $inds7;  private $inds8;
 	private $inds9;  private $inds10;
-	private $inds11; private $inds12;
-	private $inds13; private $inds14;
-	private $inds15; private $inds16;
+	private $inds21; private $inds22;
+	private $inds23; private $inds24;
+	private $inds25; private $inds26;
 
 	//constructor
 	public function __construct($tIDs, $tNames, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, 
-								$i9, $i10, $i11, $i12, $i13, $i14, $i15, $i16) 
+								$i9, $i10, $i21, $i22, $i23, $i24, $i25, $i26) 
 	{
 		$timeIDs = $tIDs; $this->timeNames = $tNames;
 		
 		$this->inds1  = $i1;  $this->inds2  = $i2;  $this->inds3  = $i3;  $this->inds4  = $i4;
 		$this->inds5  = $i5;  $this->inds6  = $i6;  $this->inds7  = $i7;  $this->inds8  = $i8;
-		$this->inds9  = $i9;  $this->inds10 = $i10; $this->inds11 = $i11; $this->inds12 = $i12;
-		$this->inds13 = $i13; $this->inds14 = $i14; $this->inds15 = $i15; $this->inds16 = $i16;
+		$this->inds9  = $i9;  $this->inds10 = $i10; $this->inds21 = $i21; $this->inds22 = $i22;
+		$this->inds23 = $i23; $this->inds24 = $i24; $this->inds25 = $i25; $this->inds26 = $i26;
 	}//constructor
 
 	public function calculateForecasts($startID, $endID, $adjust=true, $applyRescale=true) {
@@ -119,8 +119,8 @@ Class ForecastCalculator_test2 {
 		$coefI     = 0.233914247951205;
 		*/
 		for ($j = $startID-12; $j < $endID; $j++) {
-			if ($this->inds13[$j] == "") {$this->inds14[$j] = "";}
-			else {$this->inds14[$j] = $this->inds13[$j]*$this->inds11[$j];}
+			if ($this->inds23[$j] == "") {$this->inds24[$j] = "";}
+			else {$this->inds24[$j] = $this->inds23[$j]*$this->inds21[$j];}
 			
 			
 			$A = $coefA*($this->inds2[$j-12] - $this->inds2[$j-24]);
@@ -180,34 +180,34 @@ Class ForecastCalculator_test2 {
 			
 			//apply rescale if needed
 			if($applyRescale) {
-				$this->inds15[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier)*$rescale;
+				$this->inds25[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier)*$rescale;
 			}
 			else {
-				$this->inds15[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier);
+				$this->inds25[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier);
 			}
 			
 			//adjust according to shares if needed
 			if ($adjust) {
 				if($j >= $startID-1) {
-					if ($this->inds12[$j] <> $baselineShares[$j]) {
-						if ($this->inds12[$j] == "" || $this->inds12[$j] == 0) {$this->inds15[$j] = "";}
+					if ($this->inds22[$j] <> $baselineShares[$j]) {
+						if ($this->inds22[$j] == "" || $this->inds22[$j] == 0) {$this->inds25[$j] = "";}
 						else {
-							$this->inds15[$j] = $this->inds15[$j]*(1/$baselineShares[$j])*$this->inds12[$j];
+							$this->inds25[$j] = $this->inds25[$j]*(1/$baselineShares[$j])*$this->inds22[$j];
 						}
 					}
 				}
 			}
 				
-			$this->inds16[$j] = $this->inds15[$j]*$this->inds11[$j];
+			$this->inds26[$j] = $this->inds25[$j]*$this->inds21[$j];
 				
-			if ($this->inds13[$j] == "") {
-				$this->inds8[$j] = $this->inds15[$j];
+			if ($this->inds23[$j] == "") {
+				$this->inds8[$j] = $this->inds25[$j];
 			}	else {
-				$this->inds8[$j] = $this->inds13[$j];
+				$this->inds8[$j] = $this->inds23[$j];
 			}
 		}//for j
 	
-		return  $this->inds15; //"success";//$this->inds15;
+		return  $this->inds25; //"success";//$this->inds25;
 	}//calculateForecasts
 }
 

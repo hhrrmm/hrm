@@ -3,33 +3,33 @@
 /*
 ** function to update scenario/baseline table with apropriate data 
 */
-function updateTable($inds14, $inds15, $inds16, $timeIDs, $first_timeID, $last_timeID, $type, $scenID) { 
+function updateTable($inds24, $inds25, $inds26, $timeIDs, $first_timeID, $last_timeID, $type, $scenID) { 
 	//$type - baseline=0, scenario=1; if updating baseline, scenID can be any value
 	for ($k = $first_timeID - 1; $k < $last_timeID; $k++) {
 		$check_query = "";
 		if ($type==0) {
 			$check_query	=  "SELECT * FROM ConsultingMQ.hr_baseline_test2 "
 							. "WHERE TimeID=".$timeIDs[$k]
-							. " AND IndicatorID>12";
+							. " AND IndicatorID>20";
 		}
 		else if ($type == 1) {
 			$check_query	=  "SELECT * FROM ConsultingMQ.hr_scenario_test2 WHERE ScenarioID='".$scenID
 							. "' AND TimeID=".$timeIDs[$k]
-							. " AND IndicatorID>13";
+							. " AND IndicatorID>20";
 		}
 	
 		$check = mysql_query($check_query);
 		
-		$i14 = 0; $i15 = 0; $i16 = 0;
+		$i24 = 0; $i25 = 0; $i26 = 0;
 		
-		if ($inds14[$k] == "") { $i14 = "NULL"; }
-		else { $i14 = $inds14[$k];}
+		if ($inds24[$k] == "") { $i24 = "NULL"; }
+		else { $i24 = $inds24[$k];}
 		
-		if ($inds15[$k] == "") { $i15 = "NULL"; }
-		else { $i15 = $inds15[$k];}
+		if ($inds25[$k] == "") { $i25 = "NULL"; }
+		else { $i25 = $inds25[$k];}
 		
-		if ($inds16[$k] == "") { $i16 = "NULL"; }
-		else { $i16 = $inds16[$k];}
+		if ($inds26[$k] == "") { $i26 = "NULL"; }
+		else { $i26 = $inds26[$k];}
 		
 		if ($check) {
 			$n_rows = mysql_num_rows($check);
@@ -38,21 +38,21 @@ function updateTable($inds14, $inds15, $inds16, $timeIDs, $first_timeID, $last_t
 				
 				if($type == 0) {
 					$upload_queryA  = "INSERT INTO ConsultingMQ.hr_baseline_test2 (TimeID, IndicatorID, DataValue)"
-									." VALUES(".$timeIDs[$k].", 14, ".$i14.")";
+									." VALUES(".$timeIDs[$k].", 24, ".$i24.")";
 					$upload_queryB  = "INSERT INTO ConsultingMQ.hr_baseline_test2 (TimeID, IndicatorID, DataValue)"
-									." VALUES(".$timeIDs[$k].", 15, ".$i15.")";
+									." VALUES(".$timeIDs[$k].", 25, ".$i25.")";
 					$upload_queryC  = "INSERT INTO ConsultingMQ.hr_baseline_test2 (TimeID, IndicatorID, DataValue)"
-									." VALUES(".$timeIDs[$k].", 16, ".$i16.")";
+									." VALUES(".$timeIDs[$k].", 26, ".$i26.")";
 				}
 				else if ($type == 1) {
 					$upload_queryA  = "INSERT INTO ConsultingMQ.hr_scenario_test2 (scenarioID, TimeID, IndicatorID, DataValue, sessionID)"
-									." VALUES( '".$scenID."', ".$timeIDs[$k].", 14, ".$i14.", '".$SID."')";
+									." VALUES( '".$scenID."', ".$timeIDs[$k].", 24, ".$i24.", '".$SID."')";
 				
 					$upload_queryB  = "INSERT INTO ConsultingMQ.hr_scenario_test2 (scenarioID, TimeID, IndicatorID, DataValue, sessionID)"
-									." VALUES( '".$scenID."', ".$timeIDs[$k].", 15, ".$i15[$k].", '".$SID."')";
+									." VALUES( '".$scenID."', ".$timeIDs[$k].", 25, ".$i25[$k].", '".$SID."')";
 
 					$upload_queryC  = "INSERT INTO ConsultingMQ.hr_scenario_test2 (scenarioID, TimeID, IndicatorID, DataValue, sessionID)"
-									." VALUES( '".$scenID."', ".$timeIDs[$k].", 16, ".$i16[$k].", '".$SID."')";
+									." VALUES( '".$scenID."', ".$timeIDs[$k].", 26, ".$i26[$k].", '".$SID."')";
 				}
 				
 				$a = mysql_query($upload_queryA);
@@ -67,20 +67,20 @@ function updateTable($inds14, $inds15, $inds16, $timeIDs, $first_timeID, $last_t
 				$update_queryA = ""; $update_queryB = ""; $update_queryC = "";
 				
 				if($type == 0) {
-					$update_queryA  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i14
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=14";
-					$update_queryB  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i15
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=15";
-					$update_queryC  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i16
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=16";
+					$update_queryA  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i24
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=24";
+					$update_queryB  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i25
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=25";
+					$update_queryC  = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$i26
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=26";
 				}
 				else if ($type == 1) {
-					$update_queryA  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i14
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=14 AND scenarioID='".$scenID."'";
-					$update_queryB  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i15
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=15 AND scenarioID='".$scenID."'";
-					$update_queryC  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i16
-									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=16 AND scenarioID='".$scenID."'";
+					$update_queryA  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i24
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=24 AND scenarioID='".$scenID."'";
+					$update_queryB  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i25
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=25 AND scenarioID='".$scenID."'";
+					$update_queryC  = "UPDATE ConsultingMQ.hr_scenario_test2 SET DataValue=".$i26
+									." WHERE TimeID=".$timeIDs[$k]." AND IndicatorID=26 AND scenarioID='".$scenID."'";
 				}
 				
 				$uA = mysql_query($update_queryA);
