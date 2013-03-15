@@ -103,6 +103,7 @@ if ($select_result) {
 	$inds5[]        = ""; $inds6[]     = "";
 	$inds7[]        = ""; $inds8[]     = "";
 	$inds9[]        = ""; $inds10[]    = "";
+	$inds17[]        = ""; $inds18[]    = "";
 // new indicators IDs go here
 	$inds21[]       = ""; $inds22[]    = "";
 	$inds23[]       = ""; $inds24[]    = "";
@@ -161,6 +162,14 @@ if ($select_result) {
 				$inds10[$i] = $row['DataValue'];
 				break;
 
+			case "17":
+				$inds17[$i] = $row['DataValue'];
+				break;
+
+			case "18":
+				$inds18[$i] = $row['DataValue'];
+				break;				
+				
 			case "21":
 				$inds21[$i] = $row['DataValue'];
 				break;
@@ -229,13 +238,12 @@ else {
 $f = new ForecastCalculator_test2($timeIDs, $timeNames, $inds1, $inds2, $inds3, $inds4, $inds5, $inds6, $inds7, $inds8,
 						$inds9, $inds10, $inds21, $inds22, $inds23, $inds24, $inds25, $inds26);
 
-$inds15 = $f->calculateForecasts($first_timeID, $last_timeID, true, true);
+$ind25 = $f->calculateForecasts($first_timeID, $last_timeID, true, true);
 
-if($inds15 == "DB_Error") {
+if($ind25 == "DB_Error") {
 	echo "DB_Error";
 	exit;
-}
-else{
+} else {
 	for ($j = $first_timeID-12; $j < $last_timeID; $j++) {
 		if ($inds23[$j] == "") {$inds24[$j] = "";}
 		else {$inds24[$j] = $inds23[$j]*$inds21[$j];}
@@ -324,7 +332,8 @@ for ($l = 0; $l < count($timeNames); $l++) {
 	
 	$results .= formMonthlyDataXML($timeNames[$l], $inds1[$l], $inds2[$l], $inds3[$l], $inds4[$l], 
 									$inds5[$l], $inds6[$l], $inds7[$l], $inds8[$l],
-									$inds9[$l], $inds10[$l], $inds21[$l], $inds22[$l], 
+									$inds9[$l], $inds10[$l], $inds17[$l], $inds18[$l], 
+									$inds21[$l], $inds22[$l], 
 									$inds23[$l], $inds24[$l], $inds25[$l], $inds26[$l]);
 
 	//if data is for the 12th month, append annual data as well

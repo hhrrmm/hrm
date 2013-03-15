@@ -70,6 +70,7 @@
 		
 				protected function templateUpdateTime_faultHandler(event:FaultEvent):void
 				{
+					trace("templateUpdateTime");
 					Alert.show("cannot read the file!!");
 				}
 				
@@ -217,6 +218,7 @@
 			
 //baselineService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function baselineService_fault(evt:FaultEvent):void {
+				trace("fault in baselineService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -249,6 +251,7 @@
 			
 //newScenarioService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function newScenarioService_fault(evt:FaultEvent):void {
+				trace("fault in newScenarioService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -280,6 +283,7 @@
 			
 //indicatorListService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function indicatorListService_fault(evt:FaultEvent):void {
+				trace("fault in indicatorListService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -320,6 +324,7 @@
 
 //calcService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function calcService_fault(evt:FaultEvent):void {
+				trace("fault in calcService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -361,6 +366,7 @@
 			
 //lastHistPeriodService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function lastHistPeriodService_fault(evt:FaultEvent):void {
+				trace("fault in lastHistService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -458,6 +464,7 @@
 			
 //resetHistoricService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function resetHistoricService_fault(evt:FaultEvent):void {
+				trace("fault in resetHistoricService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -494,6 +501,7 @@
 			
 // refreshDBService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function refreshDBService_fault(evt:FaultEvent):void {
+				trace("fault in refreshDBService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -507,6 +515,7 @@
 			
 // recalcRescaleService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function recalcRescaleService_fault(evt:FaultEvent):void {
+				trace("fault in recalcRescaleService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -553,6 +562,7 @@
 			
 //baselineService2 event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function baselineService2_fault(evt:FaultEvent):void {
+				trace("fault in baselineService2");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -574,6 +584,7 @@
 			
 //lastHistPeriodService2 event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function lastHistPeriodService2_fault(evt:FaultEvent):void {
+				trace("fault in lastHistPeriodService2");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				
@@ -617,6 +628,7 @@
 			
 // loginService event handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			private function loginService_fault(evt:FaultEvent):void {
+				trace("fault in loginService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
 				var text:String  = evt.fault.faultString;
 				

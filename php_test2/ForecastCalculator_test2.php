@@ -20,13 +20,14 @@ Class ForecastCalculator_test2 {
 
 	//constructor
 	public function __construct($tIDs, $tNames, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, 
-								$i9, $i10, $i21, $i22, $i23, $i24, $i25, $i26) 
+								$i9, $i10, $i17, $i18,  $i21, $i22, $i23, $i24, $i25, $i26) 
 	{
 		$timeIDs = $tIDs; $this->timeNames = $tNames;
 		
 		$this->inds1  = $i1;  $this->inds2  = $i2;  $this->inds3  = $i3;  $this->inds4  = $i4;
 		$this->inds5  = $i5;  $this->inds6  = $i6;  $this->inds7  = $i7;  $this->inds8  = $i8;
-		$this->inds9  = $i9;  $this->inds10 = $i10; $this->inds21 = $i21; $this->inds22 = $i22;
+		$this->inds9  = $i9;  $this->inds10 = $i10; $this->inds17 = $i17; $this->inds18 = $i18; 
+		$this->inds21 = $i21; $this->inds22 = $i22;
 		$this->inds23 = $i23; $this->inds24 = $i24; $this->inds25 = $i25; $this->inds26 = $i26;
 	}//constructor
 
@@ -57,7 +58,7 @@ Class ForecastCalculator_test2 {
 			$bShares_query  = "SELECT DataValue "
 							. " FROM ConsultingMQ.hr1_baseline_scenario_test2, ConsultingMQ.hr_timeID_test2 "
 							. " WHERE ConsultingMQ.hr1_baseline_scenario_test2.TimeID = ConsultingMQ.hr_timeID_test2.TimeID "
-							. " AND PeriodType=1 AND IndicatorID=12 AND ConsultingMQ.hr_timeID_test2.TimeID>=".$startID
+							. " AND PeriodType=1 AND IndicatorID=22 AND ConsultingMQ.hr_timeID_test2.TimeID>=".$startID
 							. " ORDER BY ConsultingMQ.hr_timeID_test2.TimeID";
 							
 			$bShares_result = mysql_query($bShares_query);

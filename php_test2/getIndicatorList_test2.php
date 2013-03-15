@@ -10,7 +10,7 @@ mysql_select_db('ConsultingMQ');
 $query = "SELECT IndicatorID, IndicatorName, UnitName, IOType, IndicatorType, IsRatio, AggregationType, TimeName AS histEnd "
 		. " FROM ConsultingMQ.hr_indicator_test2 INNER JOIN ConsultingMQ.hr_timeID_test2 "
 		. " ON ConsultingMQ.hr_indicator_test2.historyEnd=ConsultingMQ.hr_timeID_test2.TimeID "
-		. " WHERE ( IndicatorID < 20 )
+		. " WHERE (IndicatorID <= 23)
 			ORDER BY IndicatorID";
 
 $result = mysql_query($query);
@@ -19,7 +19,7 @@ $answer = "<entries>";
 
 if ($result) {
 	while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
-		if ( $row['IndicatorID'] < 20 ) {
+		if ( $row['IndicatorID'] < 23 ) {
 			$answer .="<entry>"
 					. "<IndicatorID>".$row['IndicatorID']."</IndicatorID>"
 					. "<IndicatorName>".$row['IndicatorName']."</IndicatorName>"
