@@ -149,6 +149,7 @@
 //INITIALIZATION FUNCTION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			public function init():void {
 				logoLogin.source = "logo.gif";	
+				this.switchToWorkingState();
 			}
 			
 			public function initWorkingState():void {
@@ -630,8 +631,7 @@
 			private function loginService_fault(evt:FaultEvent):void {
 				trace("fault in loginService");
 				var title:String = evt.type + " (" + evt.fault.faultCode + ")";
-				var text:String  = evt.fault.faultString;
-				
+				var text:String  = evt.fault.faultString;				
 				alert = Alert.show(text, title);
 			}
 			

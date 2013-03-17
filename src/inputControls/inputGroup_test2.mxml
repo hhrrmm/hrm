@@ -855,17 +855,24 @@
 				updateSeries();
 			}
 
-// change handler for the indicatorList ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// change handler for the indicatorList ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
+			// additional for new identifiers
+			
 			protected function indicatorList_changeHandler(event:IndexChangeEvent=null):void
 			{
+				var deltaIndis:int = 0; 
 				indicatorListInd = this.indicatorList.selectedIndex;
+				
+				if (this.indicatorListInd < 10 ) {deltaIndis = 0};
+				if ((indicatorListInd == 10)||(indicatorListInd == 11)) {deltaIndis = 7};
+				if (this.indicatorListInd > 11 ) {deltaIndis = 10};
 				
 				cursorManager.setBusyCursor();
 				
 				sel_indi_left = this.indicatorList.selectedItem['workName'];
 				
 				sel_indi_left = 'ind'   
-					+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1);
+					+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1 + deltaIndis);
 				
 				sel_indi_period = this.indicatorList.selectedItem['histEnd'];
 				sel_indi_freq = this.indicatorList.selectedItem['IndicatorType'];

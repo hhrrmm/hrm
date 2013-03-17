@@ -236,7 +236,7 @@ else {
 }
 
 $f = new ForecastCalculator_test2($timeIDs, $timeNames, $inds1, $inds2, $inds3, $inds4, $inds5, $inds6, $inds7, $inds8,
-						$inds9, $inds10, $inds21, $inds22, $inds23, $inds24, $inds25, $inds26);
+						$inds9, $inds10, $inds17, $inds18, $inds21, $inds22, $inds23, $inds24, $inds25, $inds26);
 
 $ind25 = $f->calculateForecasts($first_timeID, $last_timeID, true, true);
 

@@ -30,10 +30,10 @@ function formMonthlyDataXML($period, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, $i9
 			
 	$xmltext.= "<ind9>".$i9."</ind9>"
 			. "<ind10>".$i10."</ind10>"
-			. "<ind10>".$i17."</ind10>"
-			. "<ind10>".$i18."</ind10>"
-			. "<ind11>".$i21."</ind11>"
-			. "<ind12>".$i22."</ind12>";
+			. "<ind17>".$i17."</ind17>"
+			. "<ind18>".$i18."</ind18>"
+			. "<ind21>".$i21."</ind21>"
+			. "<ind22>".$i22."</ind22>";
 			
 	if ($i23 == "") {
 		if ($i25 == "") {
