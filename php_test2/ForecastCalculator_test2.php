@@ -78,8 +78,7 @@ Class ForecastCalculator_test2 {
 		if($applyRescale) {
 			//get rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			$rescale_query = "SELECT RescaleValue FROM ConsultingMQ.hr_rescale_test2 WHERE ID=1";
-			$rescale = 0.998614802334848;//0.998614802334848; //0.990729507991746;					   
-
+			$rescale = 1.00217395060107; //0.998614802334848;
 				
 			$resc_result = mysql_query($rescale_query);
 				
@@ -113,7 +112,8 @@ Class ForecastCalculator_test2 {
 			
 			$A5 = $coefA5 * (log($this->inds5[$j-36]) - log($this->inds5[$j-48])); // lag 36, diff 12
 			
-			if ($this->inds10[$j-10] == 0 || $this->inds10[$j-10] == "")  {
+			if ($this->inds10[$j-10] == 0 || $this->inds10[$j-10] == "" ||
+				$this->inds10[$j-22] == 0 || $this->inds10[$j-22] == "")  {
 				$B6 = "";
 			} else {			
 				$B6 = $coefB6 * (log($this->inds6[$j-10]/ $this->inds10[$j-10]) - log($this->inds6[$j-22]/$this->inds10[$j-22])); 
@@ -128,11 +128,11 @@ Class ForecastCalculator_test2 {
 			
 			$D8 = $coefD8 * (log( $this->inds8[$j-10] + $this->inds8[$j-11] + $this->inds8[$j-12])); // lag 10, diff agg 3
 			
-			if ($this->inds10[$j-24] == 0 || $this->inds10[$j-24] == "" || $this->inds1[$j-24] == 0 || $this->inds1[$j-24] == "" ||
-				$this->inds10[$j-36] == 0 || $this->inds10[$j-36] == "" || $this->inds1[$j-36] == ""|| $this->inds1[$j-36] == 0)   {
+			if ($this->inds10[$j-16] == 0 || $this->inds10[$j-16] == "" || $this->inds1[$j-16] == 0 || $this->inds1[$j-16] == "" ||
+				$this->inds10[$j-28] == 0 || $this->inds10[$j-28] == "" || $this->inds1[$j-28] == ""|| $this->inds1[$j-28] == 0)   {
 				$E9 = "";
 			} else {
-				$E9 = $coefE9 * (log($this->inds9[$j-24]/($this->inds10[$j-24]*$this->inds1[$j-24]*10)) - log($this->inds9[$j-36]/($this->inds10[$j-36]*$this->inds1[$j-36]*10))); 
+				$E9 = $coefE9 * (log($this->inds9[$j-16]/($this->inds10[$j-16]*$this->inds1[$j-16]*10)) - log($this->inds9[$j-28]/($this->inds10[$j-28]*$this->inds1[$j-28]*10))); 
 				};
 			// lag 16, diff 12			
 			$F18 = $coefF18 * ($this->inds18[$j-12] - $this->inds18[$j-24]) ; // lag 12, diff 12
