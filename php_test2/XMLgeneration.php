@@ -69,13 +69,14 @@ function formMonthlyDataXML($period, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, $i9
 	return $xmltext;
 }
 
-function formAnnualDataXML($annPeriod, $i2, $i3, $i4, $i5, $i7, $i10) {
+function formAnnualDataXML($annPeriod, $i2, $i3, $i4, $i5, $i7, $i10, $i18) {
 	$xmltext= "<annualInd2>".$i2."</annualInd2>"
 			. "<annualInd3>".$i3."</annualInd3>"
 			. "<annualInd4>".$i4."</annualInd4>"
 			. "<annualInd5>".$i5."</annualInd5>"
 			. "<annualInd7>".$i7."</annualInd7>"
 			. "<annualInd10>".$i10."</annualInd10>"
+			. "<annualInd18>".$i18."</annualInd18>"
 			. "<annualPeriod>".$annPeriod."</annualPeriod>";
 					
 	return $xmltext;

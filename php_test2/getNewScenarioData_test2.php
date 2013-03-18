@@ -272,7 +272,7 @@ $annualTimeIDs[]   = "";
 $annualTimeNames[] = "";
 $annualInds2[]     = ""; $annualInds3[]  = ""; 
 $annualInds4[]     = ""; $annualInds5[]  = "";
-$annualInds7[]     = ""; $annualInds10[] = "";
+$annualInds7[]     = ""; $annualInds10[] = ""; $annualInds18[] = "";
 
 $annualData_query   = "SELECT ConsultingMQ.hr_timeID_test2.TimeID, TimeName, IndicatorID, DataValue "
 					. " FROM ConsultingMQ.hr3_calc_view_test2, ConsultingMQ.hr_timeID_test2 "
@@ -317,7 +317,12 @@ if ($ad_result) {
 			case "10":
 				$annualInds10[$i] = $row['DataValue'];
 				break;
-		}// switch row[IndicatorID];
+				
+			case "18":
+				$annualInds18[$i] = $row['DataValue'];
+				break;
+
+		}// switch row[IndicatorID];		
 	}//while row
 }
 else {
@@ -341,7 +346,8 @@ for ($l = 0; $l < count($timeNames); $l++) {
 		$m = array_keys($annualTimeNames, substr($timeNames[$l], 0, 4));
 		if ($m) {
 			$results.= formAnnualDataXML($annualTimeNames[$m[0]], $annualInds2[$m[0]], $annualInds3[$m[0]],
-										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]]);
+										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]],
+										$annualInds18[$m[0]]);
 		}		
 	}
 

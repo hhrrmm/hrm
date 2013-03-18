@@ -30,6 +30,8 @@ function renew_Baseline() {
 		$inds5[]        = ""; $inds6[]     = "";
 		$inds7[]        = ""; $inds8[]     = "";
 		$inds9[]        = ""; $inds10[]    = "";
+		// -- some update ID here
+		$inds17[]        = ""; $inds18[]    = "";
 		$inds21[]       = ""; $inds22[]    = "";
 
 		$out = "";
@@ -85,6 +87,14 @@ function renew_Baseline() {
 					$inds10[$i] = $row['DataValue'];
 					break;
 
+				case "17":
+					$inds17[$i] = $row['DataValue'];
+					break;
+
+				case "18":
+					$inds18[$i] = $row['DataValue'];
+					break;					
+					
 				case "21":
 					$inds21[$i] = $row['DataValue'];
 					break;
@@ -113,6 +123,7 @@ function renew_Baseline() {
 		$rates5[]        = ""; $rates6[]     = "";
 		$rates7[]        = ""; $rates8[]     = "";
 		$rates9[]        = ""; $rates10[]    = "";
+		$rates17[]        = ""; $rates18[]    = "";
 		$rates21[]       = ""; $rates22[]    = "";
 
 		$i = 1;
@@ -167,6 +178,14 @@ function renew_Baseline() {
 					$rates10[$i] = $row['Rate'];
 					break;
 
+				case "17":
+					$rates17[$i] = $row['Rate'];
+					break;
+
+				case "18":
+					$rates18[$i] = $row['Rate'];
+					break;
+
 				case "21":
 					$rates21[$i] = $row['Rate'];
 					break;
@@ -194,6 +213,10 @@ function renew_Baseline() {
 		if ($inds8[$j]  == "") { $inds8[$j]  = $inds8[$j-1] *$rates8[$j];}
 		if ($inds9[$j]  == "") { $inds9[$j]  = $inds9[$j-1] *$rates9[$j];}
 		if ($inds10[$j] == "") { $inds10[$j] = $inds10[$j-1]*$rates10[$j];}
+		
+		if ($inds17[$j]  == "") { $inds17[$j]  = $inds17[$j-1] *$rates17[$j];}
+		if ($inds18[$j] == "") { $inds18[$j] = $inds18[$j-1]*$rates18[$j];}		
+		
 		if ($inds21[$j] == "") { $inds21[$j] = $inds21[$j-1]*$rates21[$j];}
 		if ($inds22[$j] == "") { $inds22[$j] = $inds22[$j-1]*$rates22[$j];}
 	}
@@ -220,6 +243,12 @@ function renew_Baseline() {
 				. " WHERE IndicatorID=9 AND TimeID=".$timeIDs[$k];
 		$u_qry10= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds10[$k]
 				. " WHERE IndicatorID=10 AND TimeID=".$timeIDs[$k];
+		
+		$u_qry17 = "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds17[$k]
+				. " WHERE IndicatorID=17 AND TimeID=".$timeIDs[$k];
+		$u_qry18= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds18[$k]
+				. " WHERE IndicatorID=18 AND TimeID=".$timeIDs[$k];
+		
 		$u_qry21= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds21[$k]
 				. " WHERE IndicatorID=21 AND TimeID=".$timeIDs[$k];
 		$u_qry22= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$inds22[$k]
@@ -230,6 +259,7 @@ function renew_Baseline() {
 		$r5  = mysql_query($u_qry5);  $r6  = mysql_query($u_qry6);
 		$r7  = mysql_query($u_qry7);  $r8  = mysql_query($u_qry8);
 		$r9  = mysql_query($u_qry9);  $r10 = mysql_query($u_qry10);
+		$r17  = mysql_query($u_qry17);  $r18 = mysql_query($u_qry18);
 		$r21 = mysql_query($u_qry21); $r22 = mysql_query($u_qry22);
 	}//for k
 	
@@ -249,9 +279,10 @@ function renew_Baseline() {
 		$arates3[]   = ""; 
 		$arates4[]   = "";
 		$arates5[]   = ""; 		
-		$arates7[]   = ""; 
+		$arates7[]   = ""; 		
 		$arates10[]  = "";
-
+		$arates18[]   = ""; 
+		
 		//$i = 0;
 		$i = 0;
 		$currentTime = 1;
@@ -288,6 +319,10 @@ function renew_Baseline() {
 				case "10":
 					$arates10[$i] = $row['Rate'];
 					break;
+					
+				case "18":
+					$arates18[$i] = $row['Rate'];
+					break;					
 			}// switch row[IndicatorID];
 		}//while row
 	}// if r_result
@@ -311,6 +346,7 @@ function renew_Baseline() {
 		$ainds5[]   = "";
 		$ainds7[]   = ""; 
 		$ainds10[]   = "";
+		$ainds18[]   = "";
 
 		for ($j=1; $j < count($raTimeIDs); $j++) {
 		//for ($j=1; $j <= count($raTimeIDs); $j++) {		
@@ -324,6 +360,7 @@ function renew_Baseline() {
 			$ainds5[$j]  = "";
 			$ainds7[$j] = ""; 
 			$ainds10[$j] = "";
+			$ainds18[$j] = "";
 		}
 		
 		$i = 0;
@@ -363,6 +400,10 @@ function renew_Baseline() {
 					$ainds10[$i] = $row['DataValue'];
 					break;
 					
+				case "18":
+					$ainds18[$i] = $row['DataValue'];
+					break;
+					
 				default:
 					break;
 			}// switch row[IndicatorID];
@@ -382,6 +423,7 @@ function renew_Baseline() {
 		if ($ainds5[$j]  == "") { $ainds5[$j]  = $ainds5[$j-1] *$arates5[$j];}
 		if ($ainds7[$j]  == "") { $ainds7[$j]  = $ainds7[$j-1] *$arates7[$j];}
 		if ($ainds10[$j] == "") { $ainds10[$j] = $ainds10[$j-1]*$arates10[$j];}
+		if ($ainds18[$j] == "") { $ainds18[$j] = $ainds18[$j-1]*$arates18[$j];}
 	}
 
 //update baseline data table ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -398,6 +440,8 @@ function renew_Baseline() {
 				. " WHERE IndicatorID=7 AND TimeID=".$raTimeIDs[$k];
 		$u_qry10= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$ainds10[$k]
 				. " WHERE IndicatorID=10 AND TimeID=".$raTimeIDs[$k];
+		$u_qry18= "UPDATE ConsultingMQ.hr_baseline_test2 SET DataValue=".$ainds18[$k]
+				. " WHERE IndicatorID=18 AND TimeID=".$raTimeIDs[$k];
 
 		$r2  = mysql_query($u_qry2);
 		$r3  = mysql_query($u_qry3);  
@@ -405,6 +449,7 @@ function renew_Baseline() {
 		$r5  = mysql_query($u_qry5);
 		$r7  = mysql_query($u_qry7);  
 		$r10 = mysql_query($u_qry10);	
+		$r18 = mysql_query($u_qry18);	
 	}//for k
 
 	return "Success";
