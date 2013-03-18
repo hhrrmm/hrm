@@ -314,7 +314,8 @@ for ($l = 0; $l < count($timeNames); $l++) {
 		$m = array_keys($annualTimeNames, substr($timeNames[$l], 0, 4));
 		if ($m) {
 			$results.= formAnnualDataXML($annualTimeNames[$m[0]], $annualInds2[$m[0]], $annualInds3[$m[0]],
-										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]]);
+										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]],
+										$annualInds18[$m[0]]);
 		}		
 	}
 

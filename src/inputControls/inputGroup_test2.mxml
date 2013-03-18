@@ -1210,7 +1210,7 @@
 						  height="3%" width="98%" fontWeight="bold" fontFamily="Georgia" fontSize="12"/>
 				<s:Button id="selectHist_btn" label="Upload Historic Data File" 
 						  click="selectHistoricFile();" height="3%" 
-						  visible="false" enabled="false"
+						  visible="true" enabled="true"
 						  width="98%" fontWeight="bold" fontFamily="Georgia"
 						  fontSize="12"/>
 				<mx:HRule width="98%" height="2%"/>

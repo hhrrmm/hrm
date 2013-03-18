@@ -18,7 +18,7 @@ function renew_Baseline() {
 			. " FROM ConsultingMQ.hr_historic_test2 "
 			. " WHERE ConsultingMQ.hr_historic_test2.TimeID >= 348 AND ConsultingMQ.hr_historic_test2.TimeID <= "
 			.$last_timeID
-			." AND IndicatorID < 20 ORDER BY TimeID";
+			." AND IndicatorID < 23 ORDER BY TimeID";
 			
 	$result = mysql_query($Hist_query);
 	
@@ -111,7 +111,7 @@ function renew_Baseline() {
 
 //retrieve growth rates of baseline data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	$rate_query = "SELECT TimeID, IndicatorID, Rate FROM ConsultingMQ.hr_growthRates_test2 "
-				. " WHERE IndicatorID < 20 AND TimeID<=".$last_timeID." ORDER BY TimeID";
+				. " WHERE IndicatorID < 23 AND TimeID<=".$last_timeID." ORDER BY TimeID";
 	
 	$r_result = mysql_query($rate_query);
 	
@@ -268,7 +268,7 @@ function renew_Baseline() {
 
 //retrieve annual growth rates of baseline data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	$rate_query = "SELECT TimeID, IndicatorID, Rate FROM ConsultingMQ.hr_growthRates_test2 "
-				. " WHERE IndicatorID < 20 AND TimeID>=621 ORDER BY TimeID";
+				. " WHERE IndicatorID < 23 AND TimeID>=621 ORDER BY TimeID";
 	
 	$r_result = mysql_query($rate_query);
 	
