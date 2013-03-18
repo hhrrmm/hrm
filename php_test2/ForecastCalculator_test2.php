@@ -78,7 +78,7 @@ Class ForecastCalculator_test2 {
 		if($applyRescale) {
 			//get rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			$rescale_query = "SELECT RescaleValue FROM ConsultingMQ.hr_rescale_test2 WHERE ID=1";
-	$rescale = 0.998614802334848;//0.998614802334848; //0.990729507991746;					   
+			$rescale = 0.998614802334848;//0.998614802334848; //0.990729507991746;					   
 
 				
 			$resc_result = mysql_query($rescale_query);
@@ -93,68 +93,52 @@ Class ForecastCalculator_test2 {
 			}
 		}//if applyRescale
 		
-		//calculate scenario outputs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
-		//calculation coefficients
-		$intercept = 5.310481021; //4.80479202886946;		
-		$coefA     = 3.299078287; //2.59834001426802;
-		$coefB     = 3.371723152; //4.07205295839845;
-		$coefC     = -1.221606389; //-0.742384224939517;
-		$coefD     = 2.508731058; //2.15395050631486;
-		$coefE     = 2.720947649; //2.80312241123395;
-		$coefF     = 1.326854777; //1.38455041198899;
-		$coefG     = 0;
-		$coefH     = 0.344012193; //0.38391959058166;
-		$coefI     = 0.266116467; //0.263113639572815;
+//calculate scenario outputs ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 
+//calculation coefficients
+
+		$intercept  = 5.09094078328746; //5.310481021; 
+		$coefA5     = 1.99155002929997; //3.299078287; 
+		$coefB6     = 3.77469387405107; //3.371723152; 
+		$coefC7     = 1.1860139802366; //-1.221606389;
+		$coefD8     = 0.331090906793777; //2.508731058; 
+		$coefE9     = 0.332977428828686; //2.720947649; 
+		$coefF18    = 0.00221584541758416; //1.326854777; 
+		$coefG17    = 0.175223084144976; //0;
+		$linet		= -0.0887666835237632;
 		
-		/* old values
-		$intercept = 5.46634784330756;
-		$coefA     = 3.12726492447761;
-		$coefB     = 5.15367869858139;
-		$coefC     = -0.956204332035116;
-		$coefD     = 2.22520544195423;
-		$coefE     = 2.12190045615154;
-		$coefF     = 1.54408016870127;
-		$coefG     = 0;
-		$coefH     = 0.317862538254253;
-		$coefI     = 0.233914247951205;
-		*/
 		for ($j = $startID-12; $j < $endID; $j++) {
 			if ($this->inds23[$j] == "") {$this->inds24[$j] = "";}
-			else {$this->inds24[$j] = $this->inds23[$j]*$this->inds21[$j];}
+			else {$this->inds24[$j] = $this->inds23[$j]*$this->inds21[$j];}			
 			
+			$A5 = $coefA5 * (log($this->inds5[$j-36]) - log($this->inds5[$j-48])); // lag 36, diff 12
 			
-			$A = $coefA*($this->inds2[$j-12] - $this->inds2[$j-24]);
-			$B = $coefB*($this->inds3[$j-12] - $this->inds3[$j-24]);
-			$C = $coefC*($this->inds4[$j-24]);
-			$D = $coefD*(log($this->inds5[$j-36]) - log($this->inds5[$j-48]));
+			if ($this->inds10[$j-10] == 0 || $this->inds10[$j-10] == "")  {
+				$B6 = "";
+			} else {			
+				$B6 = $coefB6 * (log($this->inds6[$j-10]/ $this->inds10[$j-10]) - log($this->inds6[$j-22]/$this->inds10[$j-22])); 
+			}; // lag 10, diff 12
+			
+			if ($this->inds10[$j-24] == 0 || $this->inds10[$j-24] == "" || $this->inds1[$j-24] == 0 || $this->inds1[$j-24] == "" ||
+				$this->inds10[$j-36] == 0 || $this->inds10[$j-36] == "" || $this->inds1[$j-36] == ""|| $this->inds1[$j-36] == 0)   {
+				$C7 = "";
+			} else 	{
+				$C7 = $coefC7 * (log($this->inds7[$j-24]/($this->inds10[$j-24]*$this->inds1[$j-24]*10)) - log($this->inds7[$j-36]/($this->inds10[$j-36]*$this->inds1[$j-36]*10))); 
+			}; // lag 24, diff 12
+			
+			$D8 = $coefD8 * (log( $this->inds8[$j-10] + $this->inds8[$j-11] + $this->inds8[$j-12])); // lag 10, diff agg 3
+			
+			if ($this->inds10[$j-24] == 0 || $this->inds10[$j-24] == "" || $this->inds1[$j-24] == 0 || $this->inds1[$j-24] == "" ||
+				$this->inds10[$j-36] == 0 || $this->inds10[$j-36] == "" || $this->inds1[$j-36] == ""|| $this->inds1[$j-36] == 0)   {
+				$E9 = "";
+			} else {
+				$E9 = $coefE9 * (log($this->inds9[$j-24]/($this->inds10[$j-24]*$this->inds1[$j-24]*10)) - log($this->inds9[$j-36]/($this->inds10[$j-36]*$this->inds1[$j-36]*10))); 
+				};
+			// lag 16, diff 12			
+			$F18 = $coefF18 * ($this->inds18[$j-12] - $this->inds18[$j-24]) ; // lag 12, diff 12
+			$G17 = $coefG17 * (log($this->inds17[$j-12]) - log($this->inds17[$j-24])); // lag 12, diff 12								
 				
-			if ($this->inds10[$j-10] == 0 || $this->inds10[$j-10] == "" || $this->inds10[$j-22] == 0 || $this->inds10[$j-22] =="") {
-				$E = "";
-			}
-			else {
-				$E = $coefE*(log($this->inds6[$j-10]/$this->inds10[$j-10])-log($this->inds6[$j-22]/$this->inds10[$j-22]));
-			}
-				
-			if ($this->inds10[$j-24] == 0 || $this->inds10[$j-24] == "" || $this->inds10[$j-36] == 0 || $this->inds10[$j-36] == ""
-				|| $this->inds1[$j-24] == 0 || $this->inds1[$j-24] == "" || $this->inds1[$j-36] == 0 || $this->inds1[$j-36] == "") {
-				$F = "";
-			}
-			else {
-				$F = $coefF*(log($this->inds7[$j-24]/$this->inds1[$j-24]/100/$this->inds10[$j-24]) - log($this->inds7[$j-36]/$this->inds1[$j-36]/100/$this->inds10[$j-36]));
-			}
-			$G = $coefG*log($this->inds8[$j-5]);
-			$H = $coefH*log($this->inds8[$j-10]+$this->inds8[$j-11]+$this->inds8[$j-12]);
-				
-			if ($this->inds1[$j-16] ==0 || $this->inds1[$j-16] =="" || $this->inds10[$j-16] == 0 || $this->inds10[$j-16] == ""
-				|| $this->inds1[$j-28] ==0 || $this->inds1[$j-28] =="" || $this->inds10[$j-28] == 0 || $this->inds10[$j-28] == "") {
-				$I = "";
-			}
-			else {
-				$I = $coefI*(log($this->inds9[$j-16]/$this->inds1[$j-16]/100/$this->inds10[$j-16]) - log($this->inds9[$j-28]/$this->inds1[$j-28]/100/$this->inds10[$j-28]));
-			}
-				
-			//apply seasonal modifiers where needed
+//apply seasonal modifiers where needed
 			$modifierID = "";
 			$modifier = 0;
 			if ( (substr($this->timeNames[$j], 0, 4) == 2003 && substr($this->timeNames[$j], 5, strlen($this->timeNames[$j])-5) > 10) 
@@ -179,15 +163,16 @@ Class ForecastCalculator_test2 {
 				}
 			}
 			
-			//apply rescale if needed
+//apply rescale if needed
 			if($applyRescale) {
-				$this->inds25[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier)*$rescale;
+				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet) * $rescale;
 			}
 			else {
-				$this->inds25[$j] = exp($intercept + $A + $B + $C + $D + $E + $F + $G + $H + $I + $modifier);
+				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet);
 			}
 			
-			//adjust according to shares if needed
+//adjust according to shares if needed
+
 			if ($adjust) {
 				if($j >= $startID-1) {
 					if ($this->inds22[$j] <> $baselineShares[$j]) {
