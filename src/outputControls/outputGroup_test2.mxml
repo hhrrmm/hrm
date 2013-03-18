@@ -793,13 +793,20 @@
 
 // list change handlers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~			
 			//output list change handler
+			private var deltaIndis:int;
 			protected function list1_changeHandler(event:IndexChangeEvent):void		{
 				
 				sel_indi_left = this.left_list.selectedItem['workName'];
 				
+				if (this.sel_indi_left) {deltaIndis = 8}; 
+				
+				/*if (this.left < 10 ) {deltaIndis = 0};
+				if ((indicatorListInd == 10)||(indicatorListInd == 11)) {deltaIndis = 6};
+				if (this.indicatorListInd > 11 ) {deltaIndis = 8};*/
+				
 				if(sel_indi_left.substr(0, 3) == "ind") {
 					sel_indi_left = 'ind'   
-						+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1);
+						+ String((Number)(sel_indi_left.substr(3, sel_indi_left.length)) + 1 + deltaIndis);
 					leftCol.dataField = sel_indi_left;
 				}
 				
@@ -840,8 +847,13 @@
 					right_list.selectedIndex = 0;
 				};
 				
+				var selIdx:int = this.right_list.selectedIndex;
+				if (selIdx < 10 ) {deltaIndis = 0};
+				if ((selIdx == 10)||(selIdx == 11)) {deltaIndis = 6};
+				if (selIdx > 11 ) {deltaIndis = 8};
+				
 				sel_indi_right 	=  'ind'   
-					+ String((Number)(sel_indi_right.substr(3, sel_indi_right.length)) + 1);
+					+ String((Number)(sel_indi_right.substr(3, sel_indi_right.length)) + 1 + deltaIndis);
 				
 				
 				rightCol.dataField = sel_indi_right;
