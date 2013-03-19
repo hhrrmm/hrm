@@ -863,9 +863,10 @@
 				var deltaIndis:int = 0; 
 				indicatorListInd = this.indicatorList.selectedIndex;
 				
-				if (this.indicatorListInd < 10 ) {deltaIndis = 0};
-				if ((indicatorListInd == 10)||(indicatorListInd == 11)) {deltaIndis = 6};
-				if (this.indicatorListInd > 11 ) {deltaIndis = 8};
+				if (this.indicatorListInd < 1 ) {deltaIndis = 0};
+				if ((this.indicatorListInd >= 1)&&(this.indicatorListInd < 7)) {deltaIndis = 3};				
+				if ((indicatorListInd == 7)||(indicatorListInd == 8)) {deltaIndis = 9};
+				if (this.indicatorListInd > 8 ) {deltaIndis = 11};
 				
 				cursorManager.setBusyCursor();
 				

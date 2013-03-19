@@ -34,8 +34,8 @@ $select_result = mysql_query($query);
 if ($select_result) {
 	//arrays for data
 	$timeIDs[]      = ""; $timeNames[] = "";
-	$inds1[]        = ""; $inds2[]     = "";
-	$inds3[]        = ""; $inds4[]     = "";
+	$inds1[]        = ""; 
+	//$inds2[]     = "";	$inds3[]        = ""; $inds4[]     = ""; // tb rm
 	$inds5[]        = ""; $inds6[]     = "";
 	$inds7[]        = ""; $inds8[]     = "";
 	$inds9[]        = ""; $inds10[]    = "";
@@ -61,17 +61,17 @@ if ($select_result) {
 				$inds1[$i] = $row['DataValue'];
 				break;
 
-			case "2":
+			/*case "2":// tb rm
 				$inds2[$i] = $row['DataValue'];
 				break;
 			
-			case "3":
+			case "3":// tb rm
 				$inds3[$i] = $row['DataValue'];
 				break;
 
-			case "4":
+			case "4":// tb rm
 				$inds4[$i] = $row['DataValue'];
-				break;
+				break;*/
 
 			case "5":
 				$inds5[$i] = $row['DataValue'];
@@ -177,7 +177,7 @@ $coefG     = 0;
 $coefH     = 0.317862538254253;
 $coefI     = 0.233914247951205;
 */
-
+/*
 for ($j = $from-12; $j < $to; $j++) {	
 	$A = $coefA*($inds2[$j-12] - $inds2[$j-24]);
 	$B = $coefB*($inds3[$j-12] - $inds3[$j-24]);
@@ -246,7 +246,10 @@ for ($j = $from-12; $j < $to; $j++) {
 	}
 }//for j
 
+*/
+
 //retrieve the periods to be used in calculating the rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/*
 $period_query   = "SELECT TimeID, TimeName "
 				. " FROM ConsultingMQ.hr4_test2 INNER JOIN ConsultingMQ.hr_timeID_test2 "
 				. " ON TimeID=mtime";
@@ -279,13 +282,13 @@ if ($b > 2011) {
 		else if ($i < $a) { $periodIDs[$i] = $pID-($a-$i); }
 		else { $periodIDs[$i] = $pID+($i-$a); }
 	}
-}
+}*/
 
 //calculate new rescale value
-$rescale = 0.998614802334848;//0.998614802334848; //0.990729507991746;
+$rescale = 1.00217395060107;//0.998614802334848; //0.990729507991746;
 //default value
 
-$sum1 = 0;
+/*$sum1 = 0;
 $sum2 = 0;
 $outasF = 0;
 $outasH = 0;
@@ -312,7 +315,7 @@ for ($j=0; $j<12; $j++) {
 
 //echo $periodIDs;
 
-$rescale = $sum1/$sum2;
+$rescale = $sum1/$sum2;*/
 //testinimas
 //$rescale = 1.25; 
 

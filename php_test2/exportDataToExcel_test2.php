@@ -53,7 +53,8 @@ $select_result = mysql_query($query);
 if ($select_result) {
 	//arrays for data
 	$timeIDs[] = ""; $timeNames[] = "";
-	$inds1[]   = ""; $inds2[]     = ""; $inds3[]  = ""; $inds4[]  = "";
+	$inds1[]   = ""; 
+	//$inds2[]     = ""; $inds3[]  = ""; $inds4[]  = ""; // tb rm
 	$inds5[]   = ""; $inds6[]     = "";	$inds7[]  = ""; $inds8[]  = "";
 	$inds9[]   = ""; $inds10[]    = "";	 $inds17[]   = ""; $inds18[]    = "";	
 	$inds21[]  = ""; $inds22[]    = "";
@@ -79,17 +80,17 @@ if ($select_result) {
 				$inds1[$i] = $row['DataValue'];
 				break;
 
-			case "2":
+			/*case "2":// tb rm
 				$inds2[$i] = $row['DataValue'];
 				break;
 			
-			case "3":
+			case "3":// tb rm
 				$inds3[$i] = $row['DataValue'];
 				break;
 
-			case "4":
+			case "4":// tb rm
 				$inds4[$i] = $row['DataValue'];
-				break;
+				break;*/
 
 			case "5":
 				$inds5[$i] = $row['DataValue'];
@@ -323,11 +324,11 @@ $select_result = mysql_query($query);
 //if the query is succesful, parse the received data ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if ($select_result) {
 	//arrays for data
-	$annTimeIDs[]      = ""; $annTimeNames[]    = "";
-	$inds2a[]           = ""; $inds3a[]           = "";
-	$inds4a[]           = ""; $inds5a[]           = ""; 
-	$inds7a[]           = ""; $inds10a[]          = "";
-	$inds18a[]          = "";
+	$annTimeIDs[]      = ""; $annTimeNames[] = "";
+	//$inds2a[] = ""; $inds3a[] = "";	$inds4a[]  = ""; // tb rm
+	$inds5a[] = ""; 
+	$inds7a[] = ""; $inds10a[] = "";
+	$inds18a[] = "";
 	
 	$i = 0;
 	$currentTime = 1;
@@ -342,17 +343,17 @@ if ($select_result) {
 
 		$indicator = $row['IndicatorID'];
 		switch($indicator) {
-			case "2":
+			/*case "2":// tb rm
 				$inds2a[$i] = $row['DataValue'];
 				break;
 
-			case "3":
+			case "3":// tb rm
 				$inds3a[$i] = $row['DataValue'];
 				break;
 
-			case "4":
+			case "4":// tb rm
 				$inds4a[$i] = $row['DataValue'];
-				break;
+				break;*/
 
 			case "5":
 				$inds5a[$i] = $row['DataValue'];
@@ -446,7 +447,7 @@ for ($n = -1; $n < count($aggTimeIDs)-1; $n++) {
 }	
 	
 //get rescale value	
-	//$applyRescale = true;;
+	$applyRescale = true;
 	if($applyRescale) {
 		//get rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		$rescale_query = "SELECT RescaleValue FROM ConsultingMQ.hr_rescale_test2 WHERE ID=1";
@@ -565,22 +566,22 @@ for ($n = -1; $n < count($aggTimeIDs)-1; $n++) {
 		if ($annTimeNames[$m] >=1985 && ($annTimeIDs[$m] <= $fTimeIDAnnual)) {
 		//if ($annTimeNames[$m] >=1985 && $annTimeNames[$m] <= 2020) {
 			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(14, $m-$n+3, $annTimeNames[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(15, $m-$n+3, $inds2a[$m]);
+			/*$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(15, $m-$n+3, $inds2a[$m]);
 			//$aggUnitsAnn			
 			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(16, $m-$n+3, $inds3a[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(17, $m-$n+3, $inds4a[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(18, $m-$n+3, $inds5a[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(19, $m-$n+3, $inds7a[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(20, $m-$n+3, $inds10a[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(21, $m-$n+3, $inds18a[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(17, $m-$n+3, $inds4a[$m]);*/
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(15, $m-$n+3, $inds5a[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(16, $m-$n+3, $inds7a[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(17, $m-$n+3, $inds10a[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(18, $m-$n+3, $inds18a[$m]);
 			
 			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(21, $m-$n+3, $aggregateUnits[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(22, $m-$n+3, $aggUnitsAnn[$m + 1]);			
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(19, $m-$n+3, $aggUnitsAnn[$m + 1]);			
 			//$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(22, $m-$n+3, $aggregateValue[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(23, $m-$n+3, $aggValueAnn[$m + 1]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(24, $m-$n+3, $aggValueAnnMrkt[$m + 1]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(25, $m-$n+3, $annUpper_bounds[$m]);
-			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(26, $m-$n+3, $annLower_bounds[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(20, $m-$n+3, $aggValueAnn[$m + 1]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(21, $m-$n+3, $aggValueAnnMrkt[$m + 1]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(22, $m-$n+3, $annUpper_bounds[$m]);
+			$phpExcel->getActiveSheet()->setCellValueByColumnAndRow(23, $m-$n+3, $annLower_bounds[$m]);
 		}
 		else { $n = $n + 1; }
 	}	

@@ -132,8 +132,11 @@ $select_result = mysql_query($query);
 if ($select_result) {
 	//arrays for data
 	$timeIDs[]      = ""; $timeNames[] = "";
-	$inds1[]        = ""; $inds2[]     = "";
-	$inds3[]        = ""; $inds4[]     = "";
+	$inds1[]        = ""; 
+
+// tb rm	
+//	$inds2[]     = ""; $inds3[]        = ""; $inds4[]     = "";
+
 	$inds5[]        = ""; $inds6[]     = "";
 	$inds7[]        = ""; $inds8[]     = "";
 	$inds9[]        = ""; $inds10[]    = "";
@@ -160,17 +163,17 @@ if ($select_result) {
 				$inds1[$i] = $row['DataValue'];
 				break;
 
-			case "2":
+		/*	case "2": // tb rm
 				$inds2[$i] = $row['DataValue'];
 				break;
 			
-			case "3":
+			case "3": // tb rm
 				$inds3[$i] = $row['DataValue'];
 				break;
 
-			case "4":
+			case "4": // tb rm
 				$inds4[$i] = $row['DataValue'];
-				break;
+				break;*/
 
 			case "5":
 				$inds5[$i] = $row['DataValue'];
@@ -240,8 +243,11 @@ else {
 //get annual data values ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $annualTimeIDs[]   = "";
 $annualTimeNames[] = "";
-$annualInds2[]     = ""; $annualInds3[]  = ""; 
-$annualInds4[]     = ""; $annualInds5[]  = "";
+
+// tb rm
+$annualInds2[]     = ""; $annualInds3[]  = "";  $annualInds4[]     = ""; 
+
+$annualInds5[]  = "";
 $annualInds7[]     = ""; $annualInds10[] = ""; $annualInds18[] = "";
 
 $annualData_query   = "SELECT ConsultingMQ.hr_timeID_test2.TimeID, TimeName, IndicatorID, DataValue "
@@ -264,17 +270,17 @@ if ($ad_result) {
 
 		$indicator = $row['IndicatorID'];
 		switch($indicator) {
-			case "2":
+			/*case "2": // tb rm
 				$annualInds2[$i] = $row['DataValue'];
 				break;
 			
-			case "3":
+			case "3":// tb rm
 				$annualInds3[$i] = $row['DataValue'];
 				break;
 
-			case "4":
+			case "4":// tb rm
 				$annualInds4[$i] = $row['DataValue'];
-				break;
+				break;*/
 
 			case "5":
 				$annualInds5[$i] = $row['DataValue'];
@@ -304,7 +310,8 @@ $results = "<entries>";
 for ($l = 0; $l < count($timeNames); $l++) {
 	$results.="<entry>";
 	
-	$results .= formMonthlyDataXML($timeNames[$l], $inds1[$l], $inds2[$l], $inds3[$l], $inds4[$l], 
+	$results .= formMonthlyDataXML($timeNames[$l], $inds1[$l], 
+									//$inds2[$l], $inds3[$l], $inds4[$l], 
 									$inds5[$l], $inds6[$l], $inds7[$l], $inds8[$l],
 									$inds9[$l], $inds10[$l],$inds17[$l], $inds18[$l],
 									$inds21[$l], $inds22[$l], 
@@ -314,8 +321,9 @@ for ($l = 0; $l < count($timeNames); $l++) {
 	if (substr($timeNames[$l], 4, strlen($timeNames[$l])-4) == "M12") {
 		$m = array_keys($annualTimeNames, substr($timeNames[$l], 0, 4));
 		if ($m) {
-			$results.= formAnnualDataXML($annualTimeNames[$m[0]], $annualInds2[$m[0]], $annualInds3[$m[0]],
-										$annualInds4[$m[0]], $annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]],
+			$results.= formAnnualDataXML($annualTimeNames[$m[0]], 
+										//$annualInds2[$m[0]], $annualInds3[$m[0]], $annualInds4[$m[0]], 
+										$annualInds5[$m[0]], $annualInds7[$m[0]], $annualInds10[$m[0]],
 										$annualInds18[$m[0]]);
 		}		
 	}

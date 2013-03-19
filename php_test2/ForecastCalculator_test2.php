@@ -9,8 +9,8 @@ Class ForecastCalculator_test2 {
 	private $timeIDs; 
 	private $timeNames;
 	
-	private $inds1;  private $inds2;
-	private $inds3;  private $inds4;
+	private $inds1;  
+	//private $inds2;	private $inds3;  private $inds4; // tb rm
 	private $inds5;  private $inds6;
 	private $inds7;  private $inds8;
 	private $inds9;  private $inds10;
@@ -19,12 +19,16 @@ Class ForecastCalculator_test2 {
 	private $inds25; private $inds26;
 
 	//constructor
-	public function __construct($tIDs, $tNames, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, 
+	// tb rm
+	public function __construct($tIDs, $tNames, $i1, 
+								//$i2, $i3, $i4, 
+								$i5, $i6, $i7, $i8, 
 								$i9, $i10, $i17, $i18,  $i21, $i22, $i23, $i24, $i25, $i26) 
 	{
 		$timeIDs = $tIDs; $this->timeNames = $tNames;
 		
-		$this->inds1  = $i1;  $this->inds2  = $i2;  $this->inds3  = $i3;  $this->inds4  = $i4;
+		$this->inds1  = $i1;  
+		//$this->inds2  = $i2;  $this->inds3  = $i3;  $this->inds4  = $i4; // tb rm
 		$this->inds5  = $i5;  $this->inds6  = $i6;  $this->inds7  = $i7;  $this->inds8  = $i8;
 		$this->inds9  = $i9;  $this->inds10 = $i10; $this->inds17 = $i17; $this->inds18 = $i18; 
 		$this->inds21 = $i21; $this->inds22 = $i22;

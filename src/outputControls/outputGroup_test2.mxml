@@ -798,7 +798,7 @@
 				
 				sel_indi_left = this.left_list.selectedItem['workName'];
 				
-				if (this.sel_indi_left) {deltaIndis = 8}; 
+				if (this.sel_indi_left) {deltaIndis = 11}; 
 				
 				/*if (this.left < 10 ) {deltaIndis = 0};
 				if ((indicatorListInd == 10)||(indicatorListInd == 11)) {deltaIndis = 6};
@@ -848,9 +848,10 @@
 				};
 				
 				var selIdx:int = this.right_list.selectedIndex;
-				if (selIdx < 10 ) {deltaIndis = 0};
-				if ((selIdx == 10)||(selIdx == 11)) {deltaIndis = 6};
-				if (selIdx > 11 ) {deltaIndis = 8};
+				if (selIdx < 1 ) {deltaIndis = 0};
+				if ( (selIdx >= 1) && (selIdx < 7) ) {deltaIndis = 3};
+				if ( (selIdx == 7) || (selIdx == 8) ) {deltaIndis = 9};
+				if (selIdx > 8 ) {deltaIndis = 11};
 				
 				sel_indi_right 	=  'ind'   
 					+ String((Number)(sel_indi_right.substr(3, sel_indi_right.length)) + 1 + deltaIndis);

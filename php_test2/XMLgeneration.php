@@ -4,12 +4,14 @@
 ** Functions used for building output XMLs
 */
 
-function formMonthlyDataXML($period, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, $i9, $i10, $i17, $i18, $i21, $i22, $i23, $i24, $i25, $i26) {
+function formMonthlyDataXML($period, $i1, $i5, $i6, $i7, $i8, $i9, $i10, $i17, $i18, $i21, $i22, $i23, $i24, $i25, $i26) {
+
+// tb rm
 	$xmltext= "<period>".$period."</period>"
 			. "<ind1>".$i1."</ind1>"
-			. "<ind2>".$i2."</ind2>"
+			/*. "<ind2>".$i2."</ind2>"
 			. "<ind3>".$i3."</ind3>"
-			. "<ind4>".$i4."</ind4>"
+			. "<ind4>".$i4."</ind4>"*/
 			. "<ind5>".$i5."</ind5>"
 			. "<ind6>".$i6."</ind6>"
 			. "<ind7>".$i7."</ind7>";
@@ -69,11 +71,13 @@ function formMonthlyDataXML($period, $i1, $i2, $i3, $i4, $i5, $i6, $i7, $i8, $i9
 	return $xmltext;
 }
 
-function formAnnualDataXML($annPeriod, $i2, $i3, $i4, $i5, $i7, $i10, $i18) {
-	$xmltext= "<annualInd2>".$i2."</annualInd2>"
+function formAnnualDataXML($annPeriod, $i5, $i7, $i10, $i18) {
+
+// tb rm
+	$xmltext=/* "<annualInd2>".$i2."</annualInd2>"
 			. "<annualInd3>".$i3."</annualInd3>"
 			. "<annualInd4>".$i4."</annualInd4>"
-			. "<annualInd5>".$i5."</annualInd5>"
+			.*/ "<annualInd5>".$i5."</annualInd5>"
 			. "<annualInd7>".$i7."</annualInd7>"
 			. "<annualInd10>".$i10."</annualInd10>"
 			. "<annualInd18>".$i18."</annualInd18>"
