@@ -446,7 +446,7 @@ for ($n = -1; $n < count($aggTimeIDs)-1; $n++) {
 }	
 	
 //get rescale value	
-	$applyRescale = true;;
+	//$applyRescale = true;;
 	if($applyRescale) {
 		//get rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		$rescale_query = "SELECT RescaleValue FROM ConsultingMQ.hr_rescale_test2 WHERE ID=1";

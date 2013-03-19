@@ -165,7 +165,7 @@ Class ForecastCalculator_test2 {
 			}
 			
 //apply rescale if needed
-			$applyRescale = true;
+			//$applyRescale = true;
 			if($applyRescale) {
 				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet) * 1.00217395060107; //$rescale;				
 			}
