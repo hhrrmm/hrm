@@ -225,7 +225,7 @@ if($message == "Success") {
 //??????
 	$periodNeeded = $last_period_month;
 	while (!$done) {
-		$null_counter   = "SELECT 16-COUNT(ConsultingMQ.hr_historic_test2.DataValue) AS NullNum "
+		$null_counter   = "SELECT 15-COUNT(ConsultingMQ.hr_historic_test2.DataValue) AS NullNum "
 						. " FROM ConsultingMQ.hr_historic_test2 "
 						. " WHERE TimeID=".$periodNeeded
 						. " GROUP BY TimeID";
