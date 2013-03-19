@@ -450,7 +450,7 @@ for ($n = -1; $n < count($aggTimeIDs)-1; $n++) {
 	if($applyRescale) {
 		//get rescale value ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		$rescale_query = "SELECT RescaleValue FROM ConsultingMQ.hr_rescale_test2 WHERE ID=1";
-		$rescale = 5.09094078328746; //0.99870059566961; //0.990729507991746;			
+		$rescale = 1.00217395060107; //0.99870059566961; //0.990729507991746;			
 		$resc_result = mysql_query($rescale_query);
 			
 		if ($resc_result) {

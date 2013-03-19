@@ -116,7 +116,7 @@ Class ForecastCalculator_test2 {
 				$this->inds10[$j-22] == 0 || $this->inds10[$j-22] == "")  {
 				$B6 = "";
 			} else {			
-				$B6 = $coefB6 * (log($this->inds6[$j-10]/ $this->inds10[$j-10]) - log($this->inds6[$j-22]/$this->inds10[$j-22])); 
+				$B6 = $coefB6 * (log( $this->inds6[$j-10]/$this->inds10[$j-10] ) - log($this->inds6[$j-22]/$this->inds10[$j-22])); 
 			}; // lag 10, diff 12
 			
 			if ($this->inds10[$j-24] == 0 || $this->inds10[$j-24] == "" || $this->inds1[$j-24] == 0 || $this->inds1[$j-24] == "" ||
@@ -126,6 +126,7 @@ Class ForecastCalculator_test2 {
 				$C7 = $coefC7 * (log($this->inds7[$j-24]/($this->inds10[$j-24]*$this->inds1[$j-24]*10)) - log($this->inds7[$j-36]/($this->inds10[$j-36]*$this->inds1[$j-36]*10))); 
 			}; // lag 24, diff 12
 			
+			// what goes here when historic data ends?
 			$D8 = $coefD8 * (log( $this->inds8[$j-10] + $this->inds8[$j-11] + $this->inds8[$j-12])); // lag 10, diff agg 3
 			
 			if ($this->inds10[$j-16] == 0 || $this->inds10[$j-16] == "" || $this->inds1[$j-16] == 0 || $this->inds1[$j-16] == "" ||
@@ -135,8 +136,8 @@ Class ForecastCalculator_test2 {
 				$E9 = $coefE9 * (log($this->inds9[$j-16]/($this->inds10[$j-16]*$this->inds1[$j-16]*10)) - log($this->inds9[$j-28]/($this->inds10[$j-28]*$this->inds1[$j-28]*10))); 
 				};
 			// lag 16, diff 12			
-			$F18 = $coefF18 * ($this->inds18[$j-12] - $this->inds18[$j-24]) ; // lag 12, diff 12
-			$G17 = $coefG17 * (log($this->inds17[$j-12]) - log($this->inds17[$j-24])); // lag 12, diff 12								
+			$F18 = $coefF18 * ( $this->inds18[$j-12] - $this->inds18[$j-24] ) ; // lag 12, diff 12
+			$G17 = $coefG17 * ( log($this->inds17[$j-12]) - log($this->inds17[$j-24]) ); // lag 12, diff 12								
 				
 //apply seasonal modifiers where needed
 			$modifierID = "";
@@ -164,15 +165,17 @@ Class ForecastCalculator_test2 {
 			}
 			
 //apply rescale if needed
+			$applyRescale = true;
 			if($applyRescale) {
-				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet) * $rescale;
+				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet) * 1.00217395060107; //$rescale;				
 			}
 			else {
 				$this->inds25[$j] = exp($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet);
+				//$this->inds25[$j] = 1000*($intercept + $A5 + $B6 + $C7 + $D8 + $E9 + $F18 + $G17 + $modifier + $linet);
 			}
 			
 //adjust according to shares if needed
-
+			//$adjust = false;
 			if ($adjust) {
 				if($j >= $startID-1) {
 					if ($this->inds22[$j] <> $baselineShares[$j]) {
